@@ -1,0 +1,244 @@
+/* src/components/Layout/TutorLayout.css - CORREGIDO */
+.tutor-dash-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+/* SIDEBAR PARA TUTOR - CONSISTENTE CON JEFE */
+.tutor-sidebar {
+  width: 280px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.tutor-sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.tutor-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.tutor-sidebar-brand img {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.tutor-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-details strong {
+  font-size: 0.9rem;
+}
+
+.user-details span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* MENÚ - IDÉNTICO AL JEFELAYOUT */
+.tutor-menu {
+  list-style: none;
+  padding: 1rem 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tutor-menu li {
+  margin: 0 0.75rem;
+}
+
+.tutor-menu li a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tutor-menu li.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.tutor-menu li.active a {
+  color: white;
+  font-weight: 600;
+}
+
+.tutor-menu li:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tutor-menu li:hover:not(.active) a {
+  color: white;
+}
+
+.menu-icon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.menu-label {
+  font-size: 0.9rem;
+}
+
+/* ÍTEM DE LOGOUT - EXACTAMENTE IGUAL QUE EN JEFELAYOUT */
+.logout-item {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.5rem;
+}
+
+.logout-item a {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.logout-item:hover a {
+  color: white !important;
+}
+
+/* CONTENIDO PRINCIPAL */
+.tutor-main-panel {
+  margin-left: 280px;
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+/* RESPONSIVE - CONSISTENTE CON JEFELAYOUT */
+@media (max-width: 768px) {
+  .tutor-dash-container {
+    flex-direction: column;
+  }
+
+  .tutor-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 70px;
+    padding: 0;
+  }
+
+  .tutor-sidebar-header {
+    display: none;
+  }
+
+  .tutor-menu {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+    padding: 0;
+  }
+
+  .tutor-menu li {
+    margin: 0;
+    flex: 1;
+  }
+
+  .tutor-menu li a {
+    padding: 0.5rem;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .menu-icon {
+    font-size: 1rem;
+  }
+
+  .menu-label {
+    font-size: 0.7rem;
+  }
+
+  /* LOGOUT EN MÓVIL - VISIBLE Y FUNCIONAL */
+  .logout-item {
+    display: flex;
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .tutor-main-panel {
+    margin-left: 0;
+    margin-top: 70px;
+    padding: 1rem;
+    min-height: calc(100vh - 70px);
+  }
+}
+
+@media (max-width: 480px) {
+  .tutor-sidebar {
+    height: 60px;
+  }
+  
+  .tutor-menu li a {
+    font-size: 0.7rem;
+  }
+  
+  .menu-icon {
+    font-size: 1rem;
+  }
+  
+  .tutor-main-panel {
+    margin-top: 60px;
+    padding: 0.75rem;
+    min-height: calc(100vh - 60px);
+  }
+}

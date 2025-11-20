@@ -1,0 +1,162 @@
+.admin-dash-container {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg-light);
+}
+
+/* SIDEBAR PARA ADMIN */
+.admin-sidebar {
+  width: 280px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  padding: 2rem 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-sidebar-header {
+  padding: 0 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.admin-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  justify-content: center;
+  color: white;
+}
+
+.admin-sidebar-brand img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-sidebar li {
+  margin: 0 1rem;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.admin-sidebar li a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.admin-sidebar li.active {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.admin-sidebar li.active a {
+  color: white;
+  font-weight: 600;
+}
+
+.admin-sidebar li:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar li:hover:not(.active) a {
+  color: white;
+  transform: translateX(5px);
+}
+
+.admin-sidebar li a span {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* CONTENIDO PRINCIPAL ADMIN */
+.admin-main-panel {
+  margin-left: 280px;
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  background: var(--color-bg-light);
+  min-height: 100vh;
+}
+
+/* RESPONSIVE ADMIN */
+@media (max-width: 768px) {
+  .admin-dash-container {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 80px;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  }
+
+  .admin-sidebar-header {
+    display: none;
+  }
+
+  .admin-sidebar ul {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+  }
+
+  .admin-sidebar li {
+    margin: 0;
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-sidebar li a {
+    padding: 0.5px;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    height: 100%;
+  }
+
+  .admin-sidebar li a span {
+    font-size: 1.1rem;
+  }
+
+  .admin-main-panel {
+    margin-left: 0;
+    margin-top: 70px;
+    padding: 1rem;
+    min-height: calc(100vh - 70px);
+  }
+}

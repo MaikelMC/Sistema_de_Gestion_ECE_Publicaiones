@@ -1,0 +1,306 @@
+.mis-alumnos-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: var(--color-text-light);
+  font-size: 1.1rem;
+}
+
+/* Filtros */
+.filtros-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filtro-select {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btn-refresh {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-refresh:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn-retry {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-retry:hover {
+  background: #b91c1c;
+}
+
+.no-alumnos {
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.email {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.btn-refresh {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-refresh:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+/* Lista de Alumnos */
+.alumnos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alumno-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--color-primary);
+  transition: transform 0.3s ease;
+}
+
+.alumno-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.alumno-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.alumno-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text);
+  font-size: 1.25rem;
+}
+
+.alumno-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+}
+
+.matricula,
+.carrera,
+.ultima-actividad {
+  background: #f8fafc;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.estado-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.alumno-details {
+  margin-bottom: 1rem;
+}
+
+.progreso-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.progreso-section label {
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 150px;
+}
+
+.progreso-bar {
+  flex: 1;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.progreso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progreso-text {
+  font-weight: 600;
+  color: var(--color-primary);
+  min-width: 40px;
+}
+
+.solicitudes-info {
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.alumno-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-ver,
+.btn-contactar,
+.btn-opinion {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.btn-ver {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.btn-ver:hover {
+  background: #bae6fd;
+}
+
+.btn-contactar {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.btn-contactar:hover {
+  background: #e9d5ff;
+}
+
+.btn-opinion {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.btn-opinion:hover {
+  background: #bbf7d0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filtros-section {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .alumno-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .estado-badge {
+    align-self: flex-start;
+  }
+
+  .progreso-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .progreso-bar {
+    min-width: auto;
+  }
+
+  .alumno-actions {
+    justify-content: center;
+  }
+}

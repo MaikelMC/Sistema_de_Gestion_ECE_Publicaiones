@@ -1,0 +1,70 @@
+.logs-sistema {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.logs-filtros {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.busqueda-input, .filtro-select {
+  padding: 0.75rem;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+}
+
+.busqueda-input {
+  flex: 1;
+  min-width: 250px;
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.log-item {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.log-item:hover {
+  border-color: var(--color-primary);
+  transform: translateX(5px);
+}
+
+.log-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.log-info strong {
+  color: var(--color-primary);
+}
+
+.log-info span {
+  color: var(--color-text);
+}
+
+.log-info small {
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+}
+
+.log-fecha {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}

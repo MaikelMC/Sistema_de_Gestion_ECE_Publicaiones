@@ -1,0 +1,347 @@
+/* Login.css - COMPACTO Y LOGO CORREGIDO */
+/* Login.css - CON IMAGEN DE FONDO */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* NUEVO: Imagen de fondo con opacidad */
+  background: 
+    linear-gradient(
+      rgba(49, 49, 49, 0.5), 
+      rgba(118, 116, 121, 0.5)
+    ),
+    url('/Imagenes/UCI2.jpg') center/cover no-repeat;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ELIMINAMOS el pseudo-elemento anterior y lo reemplazamos por uno más simple para mejor contraste */
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3); /* Overlay oscuro para mejor legibilidad */
+  z-index: 0;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95); /* Más opaco para mejor contraste con el fondo */
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.25), /* Sombra más pronunciada para destacar sobre la imagen */
+    0 0 0 1px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  position: relative;
+  z-index: 1;
+  animation: slideUp 0.6s ease-out;
+}
+
+/* El resto del CSS se mantiene igual... */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  width: 80px; /* Más pequeño */
+  height: 80px; /* Más pequeño */
+  margin: 0 auto 1rem;
+  border-radius: 16px;
+  box-shadow: 
+    0 6px 15px rgba(10, 36, 99, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+/* LOGO CORREGIDO - Sin filtro blanco */
+.logo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Mantiene proporciones */
+  border-radius: 6px;
+  /* QUITAMOS el filter que volvía blanco el logo */
+  position: relative;
+  z-index: 1;
+}
+
+.login-box h1 {
+  font-size: 1.75rem; /* Más pequeño */
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--color-text-light);
+  margin-bottom: 2rem; /* Menos espacio */
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* FORMULARIO MÁS COMPACTO */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Menos espacio entre campos */
+}
+
+.form-group {
+  position: relative;
+  text-align: left;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.375rem; /* Menos espacio */
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding-left: 4px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-light);
+  font-size: 1rem;
+  z-index: 2;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 14px 14px 42px; /* Más compacto */
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: var(--color-bg-lighter);
+  font-weight: 500;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 
+    0 0 0 3px rgba(10, 36, 99, 0.1),
+    inset 0 1px 3px rgba(0, 0, 0, 0.02);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-light);
+  font-weight: 400;
+}
+
+/* BOTONES MÁS COMPACTOS */
+.btn-login {
+  width: 100%;
+  padding: 14px; /* Más compacto */
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  box-shadow: 
+    0 6px 15px rgba(10, 36, 99, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-login::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 20px rgba(10, 36, 99, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-login:hover::before {
+  left: 100%;
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+.btn-register {
+  width: 100%;
+  padding: 12px; /* Más compacto */
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.btn-register:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(10, 36, 99, 0.2);
+}
+
+/* ENLACES Y MENSAJES MÁS COMPACTOS */
+.forgot-link {
+  display: inline-block;
+  color: var(--color-primary);
+  text-decoration: none;
+  margin: 0.75rem 0; /* Menos espacio */
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.forgot-link:hover {
+  color: var(--color-primary-light);
+  text-decoration: underline;
+}
+
+.error-message {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: var(--color-error);
+  padding: 10px 14px; /* Más compacto */
+  border-radius: 8px;
+  margin: 0.75rem 0; /* Menos espacio */
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.error-message::before {
+  content: '⚠ ';
+  font-weight: bold;
+}
+
+/* DEMO CREDENTIALS MÁS COMPACTO */
+.demo-credentials {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 0.875rem; /* Más compacto */
+  margin: 1.25rem 0; /* Menos espacio */
+  text-align: left;
+}
+
+.demo-credentials h4 {
+  color: var(--color-primary);
+  margin-bottom: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.demo-credentials p {
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  margin: 0.2rem 0;
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 3px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* RESPONSIVE MEJORADO */
+@media (max-width: 768px) {
+  .login-wrapper {
+    padding: 0.75rem;
+  }
+  
+  .login-box {
+    padding: 2rem 1.5rem;
+    max-width: 360px;
+  }
+  
+  .logo-container {
+    width: 70px;
+    height: 70px;
+    padding: 10px;
+  }
+  
+  .login-box h1 {
+    font-size: 1.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 1.75rem 1.25rem;
+    max-width: 320px;
+  }
+  
+  .logo-container {
+    width: 60px;
+    height: 60px;
+    padding: 8px;
+  }
+  
+  .login-box h1 {
+    font-size: 1.4rem;
+  }
+  
+  .form-input {
+    padding: 12px 12px 12px 38px;
+  }
+  
+  .btn-login, .btn-register {
+    padding: 12px;
+  }
+}
