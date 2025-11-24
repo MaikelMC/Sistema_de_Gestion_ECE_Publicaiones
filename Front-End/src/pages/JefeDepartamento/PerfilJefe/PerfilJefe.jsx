@@ -50,7 +50,7 @@ function PerfilJefe() {
       
       // Cargar SOLO las solicitudes revisadas por ESTE jefe específico
       console.log(`🔍 Buscando solicitudes con reviewed_by=${response.data.id}`);
-      const solicitudesRevisadas = await api.get(`/ece-requests/?reviewed_by=${response.data.id}`);
+      const solicitudesRevisadas = await api.get(`/requests/?reviewed_by=${response.data.id}`);
       const solicitudesArray = Array.isArray(solicitudesRevisadas.data) 
         ? solicitudesRevisadas.data 
         : solicitudesRevisadas.data.results || [];
@@ -103,7 +103,7 @@ function PerfilJefe() {
       
       // Cargar actividad reciente (últimas 5 solicitudes del sistema)
       try {
-        const actividadResponse = await api.get('/ece-requests/?ordering=-created_at');
+        const actividadResponse = await api.get('/requests/?ordering=-created_at');
         const actividadArray = Array.isArray(actividadResponse.data) 
           ? actividadResponse.data 
           : actividadResponse.data.results || [];

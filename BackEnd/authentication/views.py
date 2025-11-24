@@ -9,6 +9,8 @@ from .serializers import (
     UserSerializer, UserCreateSerializer, UserUpdateSerializer,
     LoginSerializer, ChangePasswordSerializer, UserListSerializer
 )
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -27,6 +29,22 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserListSerializer
         return UserSerializer
     
+    @swagger_auto_schema(
+        operation_description="Obtener lista de usuarios con filtros opcionales",
+        manual_parameters=[
+            openapi.Parameter(
+                'role', openapi.IN_QUERY,
+                description="Filtrar por rol (estudiante, tutor, jefe, admin)",
+                type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                'activo', openapi.IN_QUERY,
+                description="Filtrar por estado activo (true/false)",
+                type=openapi.TYPE_BOOLEAN
+            )
+        ],
+        tags=['Autenticación - Usuarios']
+    )
     def get_queryset(self):
         user = self.request.user
         queryset = User.objects.all()
@@ -43,12 +61,22 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return queryset.order_by('-created_at')
     
+    @swagger_auto_schema(
+        operation_description="Obtener información del usuario actual",
+        responses={200: UserSerializer},
+        tags=['Autenticación - Usuarios']
+    )
     @action(detail=False, methods=['get'])
     def me(self, request):
         """Obtener información del usuario actual"""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Listar solo estudiantes activos",
+        responses={200: UserListSerializer(many=True)},
+        tags=['Autenticación - Usuarios']
+    )
     @action(detail=False, methods=['get'])
     def estudiantes(self, request):
         """Listar solo estudiantes"""
@@ -56,6 +84,11 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserListSerializer(estudiantes, many=True)
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Listar solo tutores activos",
+        responses={200: UserListSerializer(many=True)},
+        tags=['Autenticación - Usuarios']
+    )
     @action(detail=False, methods=['get'])
     def tutores(self, request):
         """Listar solo tutores"""
@@ -63,6 +96,24 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserListSerializer(tutores, many=True)
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Obtener estadísticas de usuarios",
+        responses={
+            200: openapi.Response(
+                description="Estadísticas de usuarios",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'total': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'activos': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'inactivos': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'por_rol': openapi.Schema(type=openapi.TYPE_OBJECT),
+                    }
+                )
+            )
+        },
+        tags=['Autenticación - Usuarios']
+    )
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Obtener estadísticas de usuarios"""
@@ -85,6 +136,11 @@ class UserViewSet(viewsets.ModelViewSet):
             'por_rol': {item['role']: item['count'] for item in por_rol}
         })
     
+    @swagger_auto_schema(
+        operation_description="Obtener perfil completo del usuario actual con estadísticas",
+        responses={200: UserSerializer},
+        tags=['Autenticación - Usuarios']
+    )
     @action(detail=False, methods=['get'])
     def profile(self, request):
         """Obtener perfil completo del usuario actual con estadísticas"""
@@ -225,6 +281,30 @@ class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
     
+    @swagger_auto_schema(
+        operation_description="Iniciar sesión en el sistema",
+        request_body=LoginSerializer,
+        responses={
+            200: openapi.Response(
+                description="Login exitoso",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'user': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'tokens': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'refresh': openapi.Schema(type=openapi.TYPE_STRING),
+                                'access': openapi.Schema(type=openapi.TYPE_STRING),
+                            }
+                        )
+                    }
+                )
+            ),
+            400: "Credenciales inválidas"
+        },
+        tags=['Autenticación - Auth']
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -258,6 +338,25 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = [AllowAny]
     
+    @swagger_auto_schema(
+        operation_description="Registrar nuevo usuario en el sistema",
+        request_body=UserCreateSerializer,
+        responses={
+            201: openapi.Response(
+                description="Usuario registrado exitosamente",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'user': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'tokens': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: "Datos de registro inválidos"
+        },
+        tags=['Autenticación - Auth']
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -282,6 +381,28 @@ class LogoutView(generics.GenericAPIView):
     """
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(
+        operation_description="Cerrar sesión del sistema",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Sesión cerrada exitosamente",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: "Token inválido"
+        },
+        tags=['Autenticación - Auth']
+    )
     def post(self, request):
         try:
             refresh_token = request.data.get('refresh_token')
@@ -300,6 +421,23 @@ class ChangePasswordView(generics.GenericAPIView):
     serializer_class = ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(
+        operation_description="Cambiar contraseña del usuario actual",
+        request_body=ChangePasswordSerializer,
+        responses={
+            200: openapi.Response(
+                description="Contraseña actualizada exitosamente",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: "Datos inválidos"
+        },
+        tags=['Autenticación - Auth']
+    )
     def post(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -323,6 +461,32 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         if self.request.method in ['PUT', 'PATCH']:
             return UserUpdateSerializer
         return UserSerializer
+    
+    @swagger_auto_schema(
+        operation_description="Obtener perfil del usuario actual",
+        responses={200: UserSerializer},
+        tags=['Autenticación - Perfil']
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_description="Actualizar perfil del usuario actual",
+        request_body=UserUpdateSerializer,
+        responses={200: UserSerializer},
+        tags=['Autenticación - Perfil']
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_description="Actualizar parcialmente perfil del usuario actual",
+        request_body=UserUpdateSerializer,
+        responses={200: UserSerializer},
+        tags=['Autenticación - Perfil']
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
 
 
 class ProfileStatsView(generics.GenericAPIView):
@@ -331,6 +495,16 @@ class ProfileStatsView(generics.GenericAPIView):
     """
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(
+        operation_description="Obtener estadísticas del usuario según su rol",
+        responses={
+            200: openapi.Response(
+                description="Estadísticas del usuario",
+                schema=openapi.Schema(type=openapi.TYPE_OBJECT)
+            )
+        },
+        tags=['Autenticación - Perfil']
+    )
     def get(self, request):
         user = request.user
         stats = {}

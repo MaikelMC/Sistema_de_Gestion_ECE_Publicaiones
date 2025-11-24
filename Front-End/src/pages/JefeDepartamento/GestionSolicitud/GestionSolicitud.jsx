@@ -42,7 +42,7 @@ function GestionSolicitud() {
       setError(null);
       console.log('Cargando solicitudes...');
       // Cargar TODAS las solicitudes, no solo pendientes
-      const response = await api.get('/ece-requests/');
+      const response = await api.get('/requests/');
       console.log('Respuesta del servidor:', response);
       console.log('Datos recibidos:', response.data);
       
@@ -96,7 +96,7 @@ function GestionSolicitud() {
         comments: comentarioFinal
       });
       
-      const response = await api.post(`/ece-requests/${id}/review/`, {
+      const response = await api.post(`/requests/${id}/review/`, {
         is_approved: isApproved,
         comments: comentarioFinal
       });

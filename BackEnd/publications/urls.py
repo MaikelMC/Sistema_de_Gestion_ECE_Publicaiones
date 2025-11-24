@@ -5,7 +5,12 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'publications', PublicationViewSet, basename='publication')
+# Register the primary resources at the app root so when this urls.py is
+# included under `/api/publications/` the endpoints become:
+#   - /api/publications/            -> PublicationViewSet
+#   - /api/publications/{pk}/       -> Publication detail
+# Additional resources remain as subpaths.
+router.register(r'', PublicationViewSet, basename='publication')
 router.register(r'tutor-opinions', TutorOpinionViewSet, basename='tutor-opinion')
 router.register(r'tutor-students', TutorStudentViewSet, basename='tutor-student')
 

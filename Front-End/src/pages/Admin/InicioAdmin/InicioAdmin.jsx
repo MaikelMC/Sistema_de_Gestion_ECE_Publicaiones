@@ -27,7 +27,7 @@ function InicioAdmin() {
       // Cargar estadísticas de usuarios, solicitudes y publicaciones
       const [usuariosRes, solicitudesRes, publicacionesRes] = await Promise.all([
         api.get('/auth/users/stats/'),
-        api.get('/ece-requests/stats/'),
+        api.get('/requests/stats/'),
         api.get('/publications/stats/')
       ]);
 

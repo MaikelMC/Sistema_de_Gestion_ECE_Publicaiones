@@ -38,12 +38,12 @@ export const config = {
     TUTOR_STUDENTS_MY: '/tutor-students/my_students/',
     TUTOR_STUDENTS_MY_TUTORS: '/tutor-students/my_tutors/',
     
-    // ECE Requests
-    ECE_REQUESTS: '/ece-requests/',
-    ECE_REQUESTS_MY: '/ece-requests/my_requests/',
-    ECE_REQUESTS_PENDING: '/ece-requests/pending_review/',
-    ECE_REQUEST_REVIEW: (id) => `/ece-requests/${id}/review/`,
-    ECE_REQUEST_SUBMIT: (id) => `/ece-requests/${id}/submit_for_review/`,
+    // Requests (ECE)
+    ECE_REQUESTS: '/requests/',
+    ECE_REQUESTS_MY: '/requests/my_requests/',
+    ECE_REQUESTS_PENDING: '/requests/pending_review/',
+    ECE_REQUEST_REVIEW: (id) => `/requests/${id}/review/`,
+    ECE_REQUEST_SUBMIT: (id) => `/requests/${id}/submit_for_review/`,
     
     // System
     SYSTEM_LOGS: '/system-logs/',

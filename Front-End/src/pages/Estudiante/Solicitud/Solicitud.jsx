@@ -21,7 +21,7 @@ function Solicitud() {
     try {
       setLoading(true);
       // Obtener solo las solicitudes del usuario autenticado
-      const response = await api.get('/ece-requests/my_requests/');
+      const response = await api.get('/requests/my_requests/');
       
       // Si tiene solicitudes, mostrar la más reciente que esté activa
       if (response.data && response.data.length > 0) {
@@ -96,7 +96,7 @@ function Solicitud() {
       }
 
       // Enviar solicitud al backend
-      const response = await api.post('/ece-requests/', formData, {
+      const response = await api.post('/requests/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -127,7 +127,7 @@ function Solicitud() {
 
     try {
       // Eliminar solicitud del backend
-      await api.delete(`/ece-requests/${solicitud.id}/`);
+      await api.delete(`/requests/${solicitud.id}/`);
       
       toast.success('🗑️ Solicitud cancelada correctamente');
       setSolicitud(null);

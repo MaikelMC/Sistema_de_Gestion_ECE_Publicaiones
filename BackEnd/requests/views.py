@@ -11,6 +11,8 @@ from .serializers import (
     ECERequestDetailSerializer, SystemLogSerializer, SystemLogCreateSerializer,
     SystemConfigurationSerializer
 )
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class ECERequestViewSet(viewsets.ModelViewSet):
@@ -21,7 +23,7 @@ class ECERequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['status', 'student', 'reviewed_by']  # Agregar reviewed_by para filtrar por revisor
+    filterset_fields = ['status', 'student', 'reviewed_by']
     search_fields = ['description', 'student__username', 'student__matricula']
     ordering_fields = ['created_at', 'review_date']
     ordering = ['-created_at']
@@ -33,6 +35,16 @@ class ECERequestViewSet(viewsets.ModelViewSet):
             return ECERequestDetailSerializer
         return ECERequestSerializer
     
+    @swagger_auto_schema(
+        operation_description="Obtener lista de solicitudes ECE con filtros",
+        manual_parameters=[
+            openapi.Parameter('status', openapi.IN_QUERY, description="Filtrar por estado", type=openapi.TYPE_STRING),
+            openapi.Parameter('student', openapi.IN_QUERY, description="Filtrar por estudiante", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('reviewed_by', openapi.IN_QUERY, description="Filtrar por revisor", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('search', openapi.IN_QUERY, description="Búsqueda en descripción, username o matrícula", type=openapi.TYPE_STRING),
+        ],
+        tags=['Solicitudes ECE']
+    )
     def get_queryset(self):
         user = self.request.user
         queryset = ECERequest.objects.select_related('student', 'reviewed_by').all()
@@ -46,6 +58,11 @@ class ECERequestViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @swagger_auto_schema(
+        operation_description="Obtener solicitudes del estudiante actual",
+        responses={200: ECERequestSerializer(many=True)},
+        tags=['Solicitudes ECE - Estudiantes']
+    )
     @action(detail=False, methods=['get'])
     def my_requests(self, request):
         """Obtener solicitudes del estudiante actual"""
@@ -56,6 +73,11 @@ class ECERequestViewSet(viewsets.ModelViewSet):
         serializer = ECERequestSerializer(requests_qs, many=True, context={'request': request})
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Obtener solicitudes pendientes de revisión (para jefe)",
+        responses={200: ECERequestSerializer(many=True)},
+        tags=['Solicitudes ECE - Jefes']
+    )
     @action(detail=False, methods=['get'])
     def pending_review(self, request):
         """Obtener solicitudes pendientes de revisión (para jefe)"""
@@ -66,6 +88,25 @@ class ECERequestViewSet(viewsets.ModelViewSet):
         serializer = ECERequestSerializer(requests_qs, many=True, context={'request': request})
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Revisar una solicitud ECE (para jefe de departamento)",
+        request_body=ECERequestReviewSerializer,
+        responses={
+            200: openapi.Response(
+                description="Solicitud revisada exitosamente",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'request': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            403: "No autorizado",
+            400: "Datos inválidos"
+        },
+        tags=['Solicitudes ECE - Jefes']
+    )
     @action(detail=True, methods=['post'])
     def review(self, request, pk=None):
         """Revisar una solicitud ECE (para jefe de departamento)"""
@@ -92,6 +133,24 @@ class ECERequestViewSet(viewsets.ModelViewSet):
             'request': ECERequestSerializer(ece_request, context={'request': request}).data
         }, status=status.HTTP_200_OK)
     
+    @swagger_auto_schema(
+        operation_description="Enviar solicitud para revisión",
+        responses={
+            200: openapi.Response(
+                description="Solicitud enviada para revisión",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'request': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            403: "No autorizado",
+            400: "La solicitud no está en proceso"
+        },
+        tags=['Solicitudes ECE - Estudiantes']
+    )
     @action(detail=True, methods=['post'])
     def submit_for_review(self, request, pk=None):
         """Enviar solicitud para revisión"""
@@ -111,6 +170,26 @@ class ECERequestViewSet(viewsets.ModelViewSet):
             'request': ECERequestSerializer(ece_request, context={'request': request}).data
         }, status=status.HTTP_200_OK)
     
+    @swagger_auto_schema(
+        operation_description="Obtener estadísticas de solicitudes ECE",
+        responses={
+            200: openapi.Response(
+                description="Estadísticas de solicitudes ECE",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'total': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'pendientes': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'aprobadas': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'rechazadas': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'estudiantes_activos': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'tasa_aprobacion': openapi.Schema(type=openapi.TYPE_NUMBER)
+                    }
+                )
+            )
+        },
+        tags=['Solicitudes ECE - Estadísticas']
+    )
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Obtener estadísticas de solicitudes ECE"""
@@ -135,6 +214,31 @@ class ECERequestViewSet(viewsets.ModelViewSet):
             'tasa_aprobacion': round((aprobadas / total * 100) if total > 0 else 0, 2)
         })
     
+    @swagger_auto_schema(
+        operation_description="Obtener reporte mensual de solicitudes",
+        manual_parameters=[
+            openapi.Parameter('year', openapi.IN_QUERY, description="Año para el reporte (opcional)", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Reporte mensual de solicitudes",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'mes': openapi.Schema(type=openapi.TYPE_STRING),
+                            'solicitudes': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'aprobadas': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'rechazadas': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'pendientes': openapi.Schema(type=openapi.TYPE_INTEGER)
+                        }
+                    )
+                )
+            )
+        },
+        tags=['Solicitudes ECE - Reportes']
+    )
     @action(detail=False, methods=['get'])
     def monthly_report(self, request):
         """Obtener reporte mensual de solicitudes"""
@@ -195,12 +299,27 @@ class SystemLogViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['created_at']
     ordering = ['-created_at']
     
+    @swagger_auto_schema(
+        operation_description="Obtener lista de logs del sistema (solo admins y jefes)",
+        manual_parameters=[
+            openapi.Parameter('user', openapi.IN_QUERY, description="Filtrar por usuario", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('action', openapi.IN_QUERY, description="Filtrar por acción", type=openapi.TYPE_STRING),
+            openapi.Parameter('model_name', openapi.IN_QUERY, description="Filtrar por modelo", type=openapi.TYPE_STRING),
+            openapi.Parameter('search', openapi.IN_QUERY, description="Búsqueda en descripción o username", type=openapi.TYPE_STRING),
+        ],
+        tags=['Sistema - Logs']
+    )
     def get_queryset(self):
         # Solo admins y jefes pueden ver logs
         if self.request.user.role not in ['admin', 'jefe']:
             return SystemLog.objects.none()
         return SystemLog.objects.select_related('user').all()
     
+    @swagger_auto_schema(
+        operation_description="Obtener logs recientes (últimos 50)",
+        responses={200: SystemLogSerializer(many=True)},
+        tags=['Sistema - Logs']
+    )
     @action(detail=False, methods=['get'])
     def recent(self, request):
         """Obtener logs recientes (últimos 50)"""
@@ -208,6 +327,14 @@ class SystemLogViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = SystemLogSerializer(logs, many=True)
         return Response(serializer.data)
     
+    @swagger_auto_schema(
+        operation_description="Obtener logs por usuario específico",
+        manual_parameters=[
+            openapi.Parameter('user_id', openapi.IN_QUERY, description="ID del usuario", type=openapi.TYPE_INTEGER, required=True),
+        ],
+        responses={200: SystemLogSerializer(many=True)},
+        tags=['Sistema - Logs']
+    )
     @action(detail=False, methods=['get'])
     def by_user(self, request):
         """Obtener logs por usuario"""
@@ -231,12 +358,33 @@ class SystemConfigurationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['is_active']
     search_fields = ['key', 'description']
     
+    @swagger_auto_schema(
+        operation_description="Obtener lista de configuraciones del sistema",
+        tags=['Sistema - Configuraciones']
+    )
     def get_queryset(self):
         # Solo admins pueden gestionar configuraciones
         if self.request.user.role != 'admin':
             return SystemConfiguration.objects.filter(is_active=True)
         return SystemConfiguration.objects.all()
     
+    @swagger_auto_schema(
+        operation_description="Activar/Desactivar configuración (solo admins)",
+        responses={
+            200: openapi.Response(
+                description="Configuración actualizada",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'config': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            403: "No autorizado"
+        },
+        tags=['Sistema - Configuraciones']
+    )
     @action(detail=True, methods=['post'])
     def toggle_active(self, request, pk=None):
         """Activar/Desactivar configuración"""

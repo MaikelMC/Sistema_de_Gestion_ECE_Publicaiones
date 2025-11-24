@@ -46,7 +46,7 @@ function Inicio() {
       console.log(`🔍 Buscando solicitudes con reviewed_by=${jefeId}`);
       const [estudiantesRes, solicitudesRes, publicacionesRes] = await Promise.all([
         api.get('/auth/users/?role=estudiante'),
-        api.get(`/ece-requests/?reviewed_by=${jefeId}`),
+        api.get(`/requests/?reviewed_by=${jefeId}`),
         api.get('/publications/stats/')
       ]);
 

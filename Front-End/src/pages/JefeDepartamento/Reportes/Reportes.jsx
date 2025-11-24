@@ -27,10 +27,10 @@ function Reportes() {
       // Llamadas paralelas a los endpoints
       const [statsResp, solicitudesResp, publicacionesResp, todasSolicitudesResp, solicitudesJefeResp] = await Promise.all([
         api.get('/auth/users/stats/'),
-        api.get(`/ece-requests/monthly_report/?year=${anio}`),
+        api.get(`/requests/monthly_report/?year=${anio}`),
         api.get('/publications/by_level/'),
-        api.get('/ece-requests/'), // Todas las solicitudes (global)
-        api.get(`/ece-requests/?reviewed_by=${jefeId}`) // Solicitudes del jefe
+        api.get('/requests/'), // Todas las solicitudes (global)
+        api.get(`/requests/?reviewed_by=${jefeId}`) // Solicitudes del jefe
       ]);
       
       const statsData = statsResp.data || {};
