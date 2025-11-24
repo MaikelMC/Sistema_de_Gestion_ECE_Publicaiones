@@ -14,7 +14,7 @@ function Register() {
     confirmPassword: "",
     first_name: "",
     last_name: "",
-    matricula: "",
+    anno: 1,
     carrera: "Ciberseguridad",
     especialidad: ""
   });
@@ -71,8 +71,8 @@ function Register() {
         setRole("estudiante")
       }
 
-    if (!formData.matricula) {
-      toast.error("La matrícula es obligatoria");
+    if (!formData.anno) {
+      toast.error("El año es obligatorio");
       return;
     }
 
@@ -87,7 +87,7 @@ function Register() {
         password2: formData.confirmPassword,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        matricula: formData.matricula,
+        anno: formData.anno,
         carrera: formData.carrera,
         especialidad: formData.especialidad,
         role: role
@@ -122,7 +122,7 @@ function Register() {
         const errors = error.response.data;
         if (errors.username) toast.error(`Usuario: ${errors.username[0]}`);
         if (errors.email) toast.error(`Email: ${errors.email[0]}`);
-        if (errors.matricula) toast.error(`Matrícula: ${errors.matricula[0]}`);
+        if (errors.anno) toast.error(`Año: ${errors.anno[0]}`);
         if (errors.password) toast.error(`Contraseña: ${errors.password[0]}`);
       }
     } finally {
@@ -193,15 +193,15 @@ function Register() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Matrícula</label>
+            <label className="form-label">Año</label>
             <div className="input-group">
               <span className="input-icon">🎓</span>
               <input
                 type="text"
-                name="matricula"
+                name="anno"
                 className="form-input"
-                placeholder="Tu matrícula"
-                value={formData.matricula}
+                placeholder="Tu año"
+                value={formData.anno}
                 onChange={handleChange}
                 required
                 disabled={loading}

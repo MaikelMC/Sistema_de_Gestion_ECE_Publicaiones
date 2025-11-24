@@ -22,3 +22,47 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.*
+manage.py
+
+# Build / local output
+.turbo
+.cache
+/.pnp
+/.pnp.js
+
+# Vite / npm
+/node_modules/
+/dist/
+/.vite
+
+# Logs (keep for clarity)
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE specific
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Coverage
+coverage/
+
+# Local env for VS Code
+.history/
+

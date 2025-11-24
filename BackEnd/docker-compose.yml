@@ -3,9 +3,9 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: publications_db
+    container_name: sistema_ece
     environment:
-      POSTGRES_DB: publications_db
+      POSTGRES_DB: sistema_ece
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin123
     ports:

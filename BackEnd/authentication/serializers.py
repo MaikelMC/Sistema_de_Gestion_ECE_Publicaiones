@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
-            'role', 'role_display', 'matricula', 'carrera', 'telefono',
+            'role', 'role_display', 'anno', 'carrera', 'telefono',
             'fecha_ingreso', 'activo', 'especialidad', 'grado_academico',
             'created_at', 'updated_at'
         ]
@@ -36,7 +36,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'password2', 'first_name', 
-            'last_name', 'role', 'matricula', 'carrera', 'telefono',
+            'last_name', 'role', 'anno', 'carrera', 'telefono',
             'fecha_ingreso', 'especialidad', 'grado_academico'
         ]
     
@@ -49,10 +49,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Este correo ya está registrado.")
         return value
-    
-    def validate_matricula(self, value):
-        if value and User.objects.filter(matricula=value).exists():
-            raise serializers.ValidationError("Esta matrícula ya está registrada.")
+
+    def validate_anno(self, value):
+        if value is not None:
+            # Aceptar valores entre 1 y 4 (inclusive)
+            if value < 1 or value > 4:
+                raise serializers.ValidationError("El año debe estar entre 1 y 4.")
         return value
     
     def create(self, validated_data):
@@ -71,7 +73,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'first_name', 'last_name', 'role', 'matricula', 'carrera',
+            'email', 'first_name', 'last_name', 'role', 'anno', 'carrera',
             'telefono', 'fecha_ingreso', 'especialidad', 'grado_academico', 'activo'
         ]
     
@@ -145,7 +147,7 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'role_display',
-            'matricula', 'activo', 'created_at'
+            'anno', 'activo', 'created_at'
         ]
     
     def get_full_name(self, obj):

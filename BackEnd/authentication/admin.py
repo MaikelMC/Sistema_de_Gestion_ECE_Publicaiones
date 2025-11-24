@@ -8,14 +8,14 @@ class UserAdmin(BaseUserAdmin):
     """
     Admin personalizado para el modelo User
     """
-    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'matricula', 'activo')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'anno', 'activo')
     list_filter = ('role', 'activo', 'is_staff', 'is_superuser')
-    search_fields = ('username', 'email', 'first_name', 'last_name', 'matricula')
+    search_fields = ('username', 'email', 'first_name', 'last_name', 'anno')
     ordering = ('-date_joined',)
     
     fieldsets = BaseUserAdmin.fieldsets + (
         ('Información del Rol', {
-            'fields': ('role', 'matricula', 'carrera', 'telefono', 'fecha_ingreso', 'activo')
+            'fields': ('role', 'anno', 'carrera', 'telefono', 'fecha_ingreso', 'activo')
         }),
         ('Información de Tutor', {
             'fields': ('especialidad', 'grado_academico'),
@@ -25,6 +25,6 @@ class UserAdmin(BaseUserAdmin):
     
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('Información del Rol', {
-            'fields': ('role', 'email', 'matricula')
+            'fields': ('role', 'email', 'anno')
         }),
     )

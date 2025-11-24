@@ -241,7 +241,7 @@ class LoginView(generics.GenericAPIView):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'role': user.role,
-                'matricula': user.matricula,
+                'anno': user.anno,
             },
             'tokens': {
                 'refresh': str(refresh),
