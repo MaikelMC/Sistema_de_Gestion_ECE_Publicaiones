@@ -66,6 +66,11 @@ urlpatterns = [
     path('', schema_view.with_ui('swagger', cache_timeout=0), name='api-root'),
 ]
 
+# Personalizar encabezados del admin
+admin.site.site_header = 'Sistema ECE — Panel de Administración'
+admin.site.site_title = 'Sistema ECE Admin'
+admin.site.index_title = 'Administración — Sistema ECE'
+
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

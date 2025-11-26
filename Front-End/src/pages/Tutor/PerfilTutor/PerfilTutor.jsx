@@ -1,26 +1,104 @@
 // src/pages/Tutor/PerfilTutor/PerfilTutor.jsx
 import './PerfilTutor.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Footer from '../../../components/footer';
+import authService from '../../../services/authService';
 
 function PerfilTutor() {
   const [userData, setUserData] = useState({
-    nombre: 'Dr. Roberto Mendoza',
-    email: 'rmendoza@uci.cu',
-    telefono: '+53 98765432',
-    departamento: 'Departamento de Ingeniería Informática',
-    especialidad: 'Inteligencia Artificial',
-    añosExperiencia: '8',
-    oficina: 'Edificio B, Oficina 201',
-    extension: '3456'
+    nombre: '',
+    email: '',
+    telefono: '',
+    departamento: '',
+    especialidad: '',
+    añosExperiencia: '',
+    oficina: '',
+    extension: ''
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [loading, setLoading] = useState(true);
 
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+      const profile = await authService.getProfile();
+      // Mapear datos del backend al estado local
+      const nombre = profile.first_name || profile.username || '';
+      const apellido = profile.last_name || '';
+      setUserData({
+        nombre: `${nombre} ${apellido}`.trim(),
+        email: profile.email || '',
+        telefono: profile.telefono || '',
+        departamento: profile.carrera || profile.grado_academico || '',
+        especialidad: profile.especialidad || '',
+        añosExperiencia: profile.years_experience || '',
+        oficina: profile.office || '',
+        extension: profile.extension || ''
+      });
+    } catch (err) {
+      console.error('Error al cargar datos del perfil:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleSave = (e) => {
     e.preventDefault();
-    setIsEditing(false);
-    alert('✅ Perfil actualizado correctamente');
+    (async () => {
+      try {
+        setLoading(true);
+        // Preparar payload con campos que el backend soporta
+        const nombreCompleto = userData.nombre || '';
+        const parts = nombreCompleto.split(' ');
+        const first_name = parts.shift() || '';
+        const last_name = parts.join(' ') || '';
+
+        const payload = {
+          first_name,
+          last_name,
+          email: userData.email,
+          telefono: userData.telefono,
+          especialidad: userData.especialidad,
+          // usamos 'carrera' para mapear departamento si aplica
+          carrera: userData.departamento
+        };
+
+        const updated = await authService.updateProfile(payload);
+        // Actualizar estado con respuesta del servidor
+        const nombreResp = (updated.first_name || '') + ' ' + (updated.last_name || '');
+        setUserData(prev => ({
+          ...prev,
+          nombre: nombreResp.trim(),
+          email: updated.email || prev.email,
+          telefono: updated.telefono || prev.telefono,
+          departamento: updated.carrera || updated.grado_academico || prev.departamento,
+          especialidad: updated.especialidad || prev.especialidad
+        }));
+        setIsEditing(false);
+        alert('✅ Perfil actualizado correctamente');
+      } catch (err) {
+        console.error('Error al guardar perfil:', err);
+        alert('❌ Error al actualizar el perfil. Intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="perfil-tutor-page">
+        <header className="page-header">
+          <h1>⏳ Cargando perfil...</h1>
+        </header>
+      </div>
+    );
+  }
 
   const handleInputChange = (field, value) => {
     setUserData(prev => ({
@@ -157,6 +235,7 @@ function PerfilTutor() {
           </form>
         </section>
       </div>
+      <Footer />
     </div>
   );
 }

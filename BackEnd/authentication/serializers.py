@@ -39,6 +39,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'last_name', 'role', 'anno', 'carrera', 'telefono',
             'fecha_ingreso', 'especialidad', 'grado_academico'
         ]
+        extra_kwargs = {
+            'anno': {'required': False, 'allow_null': True},
+        }
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:

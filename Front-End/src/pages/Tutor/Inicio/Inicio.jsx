@@ -2,6 +2,7 @@ import './Inicio.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import tutorService from '../../../services/tutorService';
+import { config } from '../../../config/config';
 
 function InicioTutor() {
   const [stats, setStats] = useState({
@@ -25,7 +26,7 @@ function InicioTutor() {
       setError(null);
 
       // Obtener estadísticas del perfil del tutor
-      const profileResponse = await api.get('/auth/users/profile/');
+      const profileResponse = await api.get(config.endpoints.PROFILE);
       const profileStats = profileResponse.data.stats || {};
 
       // Obtener estudiantes y publicaciones pendientes

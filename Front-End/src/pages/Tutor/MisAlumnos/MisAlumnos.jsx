@@ -1,6 +1,7 @@
 import './MisAlumnos.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { config } from '../../../config/config';
 
 function MisAlumnos() {
   const [alumnos, setAlumnos] = useState([]);
@@ -18,7 +19,8 @@ function MisAlumnos() {
       setError(null);
       
       // Obtener estudiantes asignados al tutor
-      const response = await api.get('/tutor-students/my_students/');
+      const tutorStudentsUrl = `${config.endpoints.PUBLICATIONS.replace(/\/$/, '')}/${config.endpoints.TUTOR_STUDENTS_MY.replace(/^\//, '')}`;
+      const response = await api.get(tutorStudentsUrl);
       
       // Transformar datos para incluir información adicional
       const alumnosData = await Promise.all(

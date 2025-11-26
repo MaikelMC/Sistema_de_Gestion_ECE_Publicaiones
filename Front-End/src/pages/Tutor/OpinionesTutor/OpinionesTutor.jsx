@@ -69,8 +69,6 @@ function OpinionesTutor() {
     } finally {
       setLoading(false);
     }
-
-    alert(`✅ Opinión emitida correctamente para ${publicacion.estudiante}`);
   };
 
   const filtrarOpiniones = () => {

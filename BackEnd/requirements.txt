@@ -18,9 +18,6 @@ django-filter==23.5
 
 # File uploads and validation
 Pillow==12.0.0
- 
-# OpenAPI / Swagger
-drf-spectacular
 
 # Testing (opcional)
 pytest==7.4.3

@@ -14,7 +14,6 @@ function Register() {
     confirmPassword: "",
     first_name: "",
     last_name: "",
-    anno: 1,
     carrera: "Ciberseguridad",
     especialidad: ""
   });
@@ -22,7 +21,6 @@ function Register() {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [role, setRole] = useState(""); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,16 +63,7 @@ function Register() {
       return;
     }
 
-    if (formData.email.endsWith("@uci.cu")){
-        setRole("tutor")
-      }else{
-        setRole("estudiante")
-      }
-
-    if (!formData.anno) {
-      toast.error("El año es obligatorio");
-      return;
-    }
+    const role = formData.email.endsWith("@uci.cu") ? 'tutor' : 'estudiante';
 
     setLoading(true);
 
@@ -87,7 +76,6 @@ function Register() {
         password2: formData.confirmPassword,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        anno: formData.anno,
         carrera: formData.carrera,
         especialidad: formData.especialidad,
         role: role
@@ -122,7 +110,7 @@ function Register() {
         const errors = error.response.data;
         if (errors.username) toast.error(`Usuario: ${errors.username[0]}`);
         if (errors.email) toast.error(`Email: ${errors.email[0]}`);
-        if (errors.anno) toast.error(`Año: ${errors.anno[0]}`);
+        // año handled later in profile; backend may return errors if required
         if (errors.password) toast.error(`Contraseña: ${errors.password[0]}`);
       }
     } finally {
@@ -192,22 +180,7 @@ function Register() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Año</label>
-            <div className="input-group">
-              <span className="input-icon">🎓</span>
-              <input
-                type="text"
-                name="anno"
-                className="form-input"
-                placeholder="Tu año"
-                value={formData.anno}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-          </div>
+          {/* Año eliminado del formulario de registro; los estudiantes deben añadirlo luego en su perfil */}
 
           <div className="form-group">
             <label className="form-label">Correo UCI</label>

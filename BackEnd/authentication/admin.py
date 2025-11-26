@@ -28,3 +28,6 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('role', 'email', 'anno')
         }),
     )
+    list_display_links = ('username',)
+    list_editable = ('role', 'activo')
+    list_per_page = 40

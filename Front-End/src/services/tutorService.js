@@ -1,12 +1,19 @@
 import api from './api';
 import { config } from '../config/config';
 
+const buildPublicationsUrl = (endpoint) => {
+  const pub = config.endpoints.PUBLICATIONS.replace(/\/$/, '');
+  const ep = endpoint.replace(/^\//, '');
+  return `${pub}/${ep}`;
+};
+
 export const tutorService = {
   /**
    * Obtener publicaciones pendientes de opinión del tutor
    */
   getPendingPublications: async () => {
-    const response = await api.get('/tutor-opinions/pending_publications/');
+    const url = buildPublicationsUrl(config.endpoints.TUTOR_OPINIONS_PENDING);
+    const response = await api.get(url);
     return response.data;
   },
 
@@ -14,7 +21,8 @@ export const tutorService = {
    * Obtener opiniones emitidas por el tutor
    */
   getMyOpinions: async () => {
-    const response = await api.get('/tutor-opinions/my_opinions/');
+    const url = buildPublicationsUrl(config.endpoints.TUTOR_OPINIONS_MY);
+    const response = await api.get(url);
     return response.data;
   },
 
@@ -22,7 +30,8 @@ export const tutorService = {
    * Emitir opinión sobre una publicación
    */
   createOpinion: async (publicationId, opinionData) => {
-    const response = await api.post('/tutor-opinions/', {
+    const url = buildPublicationsUrl(config.endpoints.TUTOR_OPINIONS);
+    const response = await api.post(url, {
       publication: publicationId,
       ...opinionData
     });
@@ -33,7 +42,8 @@ export const tutorService = {
    * Obtener estudiantes asignados al tutor
    */
   getMyStudents: async () => {
-    const response = await api.get('/tutor-students/my_students/');
+    const url = buildPublicationsUrl(config.endpoints.TUTOR_STUDENTS_MY);
+    const response = await api.get(url);
     return response.data;
   },
 
@@ -42,7 +52,8 @@ export const tutorService = {
    */
   getAll: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
-    const url = params ? `/tutor-opinions/?${params}` : '/tutor-opinions/';
+    const base = buildPublicationsUrl(config.endpoints.TUTOR_OPINIONS);
+    const url = params ? `${base}?${params}` : base;
     const response = await api.get(url);
     return response.data;
   }

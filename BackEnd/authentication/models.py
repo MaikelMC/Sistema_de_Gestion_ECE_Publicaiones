@@ -15,8 +15,10 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='estudiante')
     # `anno` no debe ser único a nivel de base de datos porque varios usuarios
     # pueden compartir el mismo año académico. La validación de rango se
-    # maneja en el serializer (`validate_anno`).
-    anno = models.IntegerField()
+    # maneja en el serializer (`validate_anno`). Hacemos el campo opcional
+    # para permitir el registro sin especificar el año; el estudiante podrá
+    # actualizarlo después desde su perfil.
+    anno = models.IntegerField(null=True, blank=True)
     carrera = models.CharField(max_length=200, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     fecha_ingreso = models.DateField(null=True, blank=True)

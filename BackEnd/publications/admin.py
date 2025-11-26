@@ -9,6 +9,26 @@ class PublicationAdmin(admin.ModelAdmin):
     search_fields = ('title', 'authors', 'student__username', 'doi')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
+    list_display_links = ('title',)
+    list_editable = ('nivel', 'status')
+    date_hierarchy = 'created_at'
+    list_per_page = 30
+    actions = ['mark_as_pending', 'mark_as_approved', 'mark_as_rejected']
+
+    def mark_as_pending(self, request, queryset):
+        updated = queryset.update(status='pending')
+        self.message_user(request, f"{updated} publicaciones marcadas como 'pending'.")
+    mark_as_pending.short_description = "Marcar seleccionadas como 'pending'"
+
+    def mark_as_approved(self, request, queryset):
+        updated = queryset.update(status='approved')
+        self.message_user(request, f"{updated} publicaciones marcadas como 'approved'.")
+    mark_as_approved.short_description = "Marcar seleccionadas como 'approved'"
+
+    def mark_as_rejected(self, request, queryset):
+        updated = queryset.update(status='rejected')
+        self.message_user(request, f"{updated} publicaciones marcadas como 'rejected'.")
+    mark_as_rejected.short_description = "Marcar seleccionadas como 'rejected'"
 
 
 @admin.register(TutorOpinion)

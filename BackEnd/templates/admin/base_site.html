@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Sistema ECE — Administración{% endblock %}
+
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <h1>Sistema ECE — Administración</h1>
+</div>
+{% endblock %}
+
+{% block nav-global %}
+  {# Keep default navigation but make it clearer #}
+  {{ block.super }}
+{% endblock %}

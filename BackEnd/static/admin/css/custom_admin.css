@@ -1,0 +1,115 @@
+/* Custom admin styles for Sistema ECE */
+
+/* Body and header */
+#header, .module caption, .brand {
+  background: linear-gradient(90deg,#0b74de,#3b82f6);
+  color: #fff !important;
+}
+
+#header h1 {
+  color: #fff;
+}
+
+/* Make the admin boxes look more modern */
+.dashboard-module, .app-list, .module {
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+  border: 1px solid rgba(15,23,42,0.04);
+}
+
+/* Buttons */
+.button, .submit-row .default {
+  background: #06b6d4;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+/* Table row hover */
+#result_list tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Compact list filters */
+.field-filter {
+  background: #ffffff;
+}
+
+/* Forms spacing */
+fieldset.module, .inline-group {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 6px;
+}
+
+/* Branding logo tweak */
+#site-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#site-name img { height: 34px; }
+
+/* Dark mode for Django admin change/detail pages */
+/* Applies only when viewing the change form (object detail/edit) */
+body.change-form .module,
+body.change-form fieldset.module,
+body.change-form .inline-group,
+body.change-form .object-tools,
+body.change-form .breadcrumbs,
+body.change-form #content,
+body.change-form #content-main {
+  background: #0b1220 !important;
+  color: #e6eef8 !important;
+}
+
+body.change-form .module caption,
+body.change-form .module h2,
+body.change-form h1,
+body.change-form .breadcrumbs a {
+  color: #e6eef8 !important;
+}
+
+body.change-form label,
+body.change-form .help,
+body.change-form p,
+body.change-form .readonly {
+  color: #dbeafe !important;
+}
+
+body.change-form input[type="text"],
+body.change-form input[type="email"],
+body.change-form input[type="number"],
+body.change-form input[type="date"],
+body.change-form select,
+body.change-form textarea {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: #e6eef8 !important;
+}
+
+body.change-form .submit-row .default,
+body.change-form .submit-row input[type="submit"],
+body.change-form .object-tools .default {
+  background: #065f9e !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Inline groups and fieldsets adjustments */
+body.change-form .inline-group,
+body.change-form fieldset.module {
+  box-shadow: none !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* Make table rows readable in dark detail sections */
+body.change-form table, body.change-form th, body.change-form td {
+  color: #dbeafe !important;
+}
+
+/* Keep link styles visible */
+body.change-form a { color: #9fe6ff !important; }
+
