@@ -19,6 +19,6 @@ Errores del Backend
 
 - Eliminar el campo estension del perfil de tutor
 
--Revisar el panel de administracion 
+- Revisar el panel de administracion 
 
 - Revisar el panel de jefe de departamento
