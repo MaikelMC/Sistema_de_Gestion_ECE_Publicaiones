@@ -1,10 +1,12 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import authService from '../../services/authService';
+import { useNotifications } from '../../hooks/useNotifications';
 import './AdminLayout.css';
 
 function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -19,6 +21,7 @@ function AdminLayout() {
   const menuItems = [
     { path: '/admin/inicio', label: 'Dashboard', icon: '📊' },
     { path: '/admin/usuarios', label: 'Usuarios', icon: '👥' },
+    { path: '/admin/notificaciones', label: 'Notificaciones', icon: '🔔' },
     { path: '/admin/logs', label: 'Logs', icon: '📝' },
     { path: '/admin/configuracion', label: 'Configuración', icon: '⚙️' },
   ];
@@ -42,6 +45,9 @@ function AdminLayout() {
               <a onClick={() => handleNavigation(item.path)} style={{cursor: 'pointer'}}>
                 <span>{item.icon}</span>
                 {item.label}
+                {item.path === '/admin/notificaciones' && unreadCount > 0 && (
+                  <span className="notification-badge">{unreadCount}</span>
+                )}
               </a>
             </li>
           ))}

@@ -22,3 +22,17 @@ Errores del Backend
 - Revisar el panel de administracion 
 
 - Revisar el panel de jefe de departamento
+
+- No se encuentra implementado en cambiar contraseña 
+
+- No se encuentra implementado el Olvidar contraseña
+
+Restricción IP para accesos administrativos
+
+Resumen: Limitar acceso al admin y endpoints críticos por lista blanca de IPs o ranges.
+Pasos:
+Añadir middleware que cheque request.META['REMOTE_ADDR'] o HTTP_X_FORWARDED_FOR y compare con ALLOW_ADMIN_IPS en settings.py.
+Aplicar la comprobación solo en rutas de admin (/admin/) o vistas con @staff_member_required.
+Alternativa infra: configurar firewall o reverse-proxy (NGINX) para restringir IPs — preferible en producción.
+Estimación: 2–4 horas (middleware) o ajustar infra (depende).
+Registro de auditoría centralizado y completo (SystemLog instrumentación)

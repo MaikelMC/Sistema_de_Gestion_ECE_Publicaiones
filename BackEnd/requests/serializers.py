@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ECERequest, SystemLog, SystemConfiguration
+from .models import ECERequest, SystemLog, SystemConfiguration, AdminNotification
 from authentication.serializers import UserListSerializer
 
 
@@ -109,7 +109,7 @@ class SystemLogSerializer(serializers.ModelSerializer):
     """
     Serializer para logs del sistema
     """
-    user_name = serializers.CharField(source='user.get_full_name', read_only=True, allow_null=True)
+    user_name = serializers.SerializerMethodField()
     action_display = serializers.CharField(source='get_action_display', read_only=True)
     
     class Meta:
@@ -120,6 +120,15 @@ class SystemLogSerializer(serializers.ModelSerializer):
             'user_agent', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+    
+    def get_user_name(self, obj):
+        """Obtener nombre del usuario con fallback"""
+        if obj.user:
+            full_name = obj.user.get_full_name()
+            if full_name and full_name.strip():
+                return full_name
+            return obj.user.username
+        return 'Sistema'
 
 
 class SystemLogCreateSerializer(serializers.ModelSerializer):
@@ -155,3 +164,30 @@ class SystemConfigurationSerializer(serializers.ModelSerializer):
             if SystemConfiguration.objects.filter(key=value).exclude(pk=self.instance.pk).exists():
                 raise serializers.ValidationError("Esta clave ya existe en la configuración.")
         return value
+
+
+class AdminNotificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer para notificaciones del administrador
+    """
+    type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+    severity_display = serializers.CharField(source='get_severity_display', read_only=True)
+    user_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AdminNotification
+        fields = [
+            'id', 'notification_type', 'type_display', 'severity', 'severity_display',
+            'title', 'message', 'user', 'user_name', 'ip_address', 'metadata',
+            'is_read', 'is_resolved', 'created_at', 'read_at', 'resolved_at'
+        ]
+        read_only_fields = [
+            'id', 'notification_type', 'severity', 'title', 'message', 'user',
+            'ip_address', 'metadata', 'created_at'
+        ]
+    
+    def get_user_name(self, obj):
+        """Retorna el nombre del usuario asociado a la notificación"""
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return None

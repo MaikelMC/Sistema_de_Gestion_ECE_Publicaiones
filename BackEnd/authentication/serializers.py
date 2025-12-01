@@ -2,6 +2,9 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from .models import User
+from .models import FailedLoginIP
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -99,14 +102,43 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         
         if username and password:
+            # Comprobar bloqueo por intentos fallidos antes de autenticar
+            try:
+                user_obj = User.objects.filter(username=username).first()
+            except Exception:
+                user_obj = None
+            # Comprobar bloqueo por usuario
+            if user_obj and user_obj.locked_until and user_obj.locked_until > timezone.now():
+                raise serializers.ValidationError('Cuenta temporalmente bloqueada. Intente más tarde.')
+
+            # Comprobar bloqueo por IP
+            req = self.context.get('request')
+            if req is not None:
+                xff = req.META.get('HTTP_X_FORWARDED_FOR')
+                ip = xff.split(',')[0].strip() if xff else req.META.get('REMOTE_ADDR')
+                try:
+                    ip_rec = FailedLoginIP.objects.filter(ip_address=ip).first()
+                except Exception:
+                    ip_rec = None
+                if ip_rec and ip_rec.blocked_until and ip_rec.blocked_until > timezone.now():
+                    raise serializers.ValidationError('Intentos desde esta IP temporalmente bloqueados.')
+
             user = authenticate(username=username, password=password)
-            
+
             if not user:
+                # Disparar señal de login fallido para que se registre
+                from django.contrib.auth.signals import user_login_failed
+                user_login_failed.send(
+                    sender=__name__,
+                    credentials={'username': username},
+                    request=req
+                )
                 raise serializers.ValidationError('Credenciales inválidas.')
-            
+
             if not user.is_active:
                 raise serializers.ValidationError('Usuario inactivo.')
-            
+
+            # Si pasó la autenticación, devolver user
             attrs['user'] = user
             return attrs
         else:
@@ -134,6 +166,10 @@ class ChangePasswordSerializer(serializers.Serializer):
     
     def save(self, **kwargs):
         user = self.context['request'].user
+        # Comprobar reutilización de contraseñas (últimas 5)
+        new_pw = self.validated_data['new_password']
+        if user.is_password_reused(new_pw, history_count=5):
+            raise serializers.ValidationError({'new_password': 'No puede reutilizar una contraseña reciente.'})
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user

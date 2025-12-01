@@ -13,6 +13,22 @@ from .serializers import (
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.apps import apps as dj_apps
+from django.db import transaction
+
+
+# Cargar helper `log_event` desde la app local `requests` evitando colisiones
+def _load_log_event():
+    try:
+        req_cfg = dj_apps.get_app_config('requests')
+        utils_mod = getattr(req_cfg.module, 'utils', None)
+        if utils_mod:
+            return getattr(utils_mod, 'log_event', None)
+    except Exception:
+        return None
+
+
+log_event = _load_log_event()
 
 
 class PublicationViewSet(viewsets.ModelViewSet):
@@ -261,6 +277,53 @@ class PublicationViewSet(viewsets.ModelViewSet):
             })
         
         return Response(data)
+
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        try:
+            if log_event:
+                transaction.on_commit(lambda: log_event(
+                    user=self.request.user,
+                    request=self.request,
+                    action='create',
+                    model_name='Publication',
+                    object_id=obj.id,
+                    description=f"Creada publicación id={obj.id} título='{getattr(obj, 'title', '')}'"
+                ))
+        except Exception:
+            pass
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        try:
+            if log_event:
+                transaction.on_commit(lambda: log_event(
+                    user=self.request.user,
+                    request=self.request,
+                    action='update',
+                    model_name='Publication',
+                    object_id=obj.id,
+                    description=f"Actualizada publicación id={obj.id} título='{getattr(obj, 'title', '')}'"
+                ))
+        except Exception:
+            pass
+
+    def perform_destroy(self, instance):
+        obj_id = instance.id
+        title = getattr(instance, 'title', '')
+        instance.delete()
+        try:
+            if log_event:
+                transaction.on_commit(lambda: log_event(
+                    user=self.request.user,
+                    request=self.request,
+                    action='delete',
+                    model_name='Publication',
+                    object_id=obj_id,
+                    description=f"Eliminada publicación id={obj_id} título='{title}'"
+                ))
+        except Exception:
+            pass
 
 
 class TutorOpinionViewSet(viewsets.ModelViewSet):

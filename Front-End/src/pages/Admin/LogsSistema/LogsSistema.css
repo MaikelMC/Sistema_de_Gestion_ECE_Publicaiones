@@ -1,3 +1,30 @@
+.logs-sistema.container {
+  padding: 20px;
+}
+.logs-filters {
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+  align-items:center;
+}
+.logs-table {
+  width:100%;
+  border-collapse:collapse;
+}
+.logs-table th, .logs-table td {
+  border:1px solid #e5e7eb;
+  padding:8px;
+  text-align:left;
+}
+.logs-table thead {
+  background:#f3f4f6;
+}
+.logs-pagination {
+  margin-top:12px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
 .logs-sistema {
   display: flex;
   flex-direction: column;

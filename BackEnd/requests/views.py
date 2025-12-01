@@ -5,14 +5,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import ECERequest, SystemLog, SystemConfiguration
+from .models import ECERequest, SystemLog, SystemConfiguration, AdminNotification
 from .serializers import (
     ECERequestSerializer, ECERequestCreateSerializer, ECERequestReviewSerializer,
     ECERequestDetailSerializer, SystemLogSerializer, SystemLogCreateSerializer,
-    SystemConfigurationSerializer
+    SystemConfigurationSerializer, AdminNotificationSerializer
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+try:
+    from .utils import log_event
+except Exception:
+    log_event = None
 
 
 class ECERequestViewSet(viewsets.ModelViewSet):
@@ -119,14 +123,22 @@ class ECERequestViewSet(viewsets.ModelViewSet):
         serializer.save(ece_request=ece_request, reviewer=request.user)
         
         # Crear log
-        SystemLog.objects.create(
-            user=request.user,
-            action='review',
-            model_name='ECERequest',
-            object_id=ece_request.id,
-            description=f"Revisión de solicitud ECE: {'Aprobada' if serializer.validated_data['is_approved'] else 'Rechazada'}",
-            ip_address=self.get_client_ip(request)
-        )
+        # Registrar en SystemLog usando helper central
+        try:
+            if log_event:
+                log_event(user=request.user, request=request, action='review', model_name='ECERequest', object_id=ece_request.id,
+                          description=f"Revisión de solicitud ECE: {'Aprobada' if serializer.validated_data['is_approved'] else 'Rechazada'}")
+            else:
+                SystemLog.objects.create(
+                    user=request.user,
+                    action='review',
+                    model_name='ECERequest',
+                    object_id=ece_request.id,
+                    description=f"Revisión de solicitud ECE: {'Aprobada' if serializer.validated_data['is_approved'] else 'Rechazada'}",
+                    ip_address=self.get_client_ip(request)
+                )
+        except Exception:
+            pass
         
         return Response({
             'message': 'Solicitud revisada exitosamente',
@@ -358,6 +370,39 @@ class SystemConfigurationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['is_active']
     search_fields = ['key', 'description']
     
+    def perform_create(self, serializer):
+        """Log configuration creation"""
+        config = serializer.save()
+        try:
+            if log_event:
+                log_event(user=self.request.user, request=self.request, action='config_change',
+                          model_name='SystemConfiguration', object_id=config.id,
+                          description=f"Configuración creada: {config.key}={config.value}")
+        except Exception:
+            pass
+    
+    def perform_update(self, serializer):
+        """Log configuration update"""
+        config = serializer.save()
+        try:
+            if log_event:
+                log_event(user=self.request.user, request=self.request, action='config_change',
+                          model_name='SystemConfiguration', object_id=config.id,
+                          description=f"Configuración actualizada: {config.key}={config.value}")
+        except Exception:
+            pass
+    
+    def perform_destroy(self, instance):
+        """Log configuration deletion"""
+        try:
+            if log_event:
+                log_event(user=self.request.user, request=self.request, action='config_change',
+                          model_name='SystemConfiguration', object_id=instance.id,
+                          description=f"Configuración eliminada: {instance.key}")
+        except Exception:
+            pass
+        instance.delete()
+    
     @swagger_auto_schema(
         operation_description="Obtener lista de configuraciones del sistema",
         tags=['Sistema - Configuraciones']
@@ -392,8 +437,18 @@ class SystemConfigurationViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Solo admins pueden modificar'}, status=status.HTTP_403_FORBIDDEN)
         
         config = self.get_object()
+        old_state = config.is_active
         config.is_active = not config.is_active
         config.save()
+        
+        # Log toggle action
+        try:
+            if log_event:
+                log_event(user=request.user, request=request, action='config_change',
+                          model_name='SystemConfiguration', object_id=config.id,
+                          description=f"Configuración {config.key} {'activada' if config.is_active else 'desactivada'}")
+        except Exception:
+            pass
         
         return Response({
             'message': f"Configuración {'activada' if config.is_active else 'desactivada'}",

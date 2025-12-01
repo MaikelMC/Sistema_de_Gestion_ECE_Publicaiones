@@ -29,6 +29,39 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserListSerializer
         return UserSerializer
     
+    def perform_create(self, serializer):
+        """Log user creation"""
+        user = serializer.save()
+        try:
+            from requests.utils import log_event
+            log_event(user=self.request.user, request=self.request, action='user_create', 
+                      model_name='User', object_id=user.id,
+                      description=f"Usuario creado: {user.username} (rol: {user.role})")
+        except Exception:
+            pass
+    
+    def perform_update(self, serializer):
+        """Log user update"""
+        user = serializer.save()
+        try:
+            from requests.utils import log_event
+            log_event(user=self.request.user, request=self.request, action='user_update', 
+                      model_name='User', object_id=user.id,
+                      description=f"Usuario actualizado: {user.username}")
+        except Exception:
+            pass
+    
+    def perform_destroy(self, instance):
+        """Log user deletion"""
+        try:
+            from requests.utils import log_event
+            log_event(user=self.request.user, request=self.request, action='user_delete', 
+                      model_name='User', object_id=instance.id,
+                      description=f"Usuario eliminado: {instance.username}")
+        except Exception:
+            pass
+        instance.delete()
+    
     @swagger_auto_schema(
         operation_description="Obtener lista de usuarios con filtros opcionales",
         manual_parameters=[
@@ -307,12 +340,38 @@ class LoginView(generics.GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            # Si la validación falló, comprobar si la cuenta fue bloqueada en este momento
+            username = request.data.get('username')
+            if username:
+                try:
+                    from authentication.models import User
+                    from django.utils import timezone
+                    u = User.objects.filter(username=username).first()
+                    if u and u.locked_until and u.locked_until > timezone.now():
+                        remaining = (u.locked_until - timezone.now()).total_seconds()
+                        minutes = int(remaining // 60) + (1 if remaining % 60 > 0 else 0)
+                        return Response({
+                            'detail': 'Cuenta temporalmente bloqueada.',
+                            'locked_minutes': minutes,
+                            'locked_until': u.locked_until
+                        }, status=423)
+                except Exception:
+                    pass
+            # Re-lanzar la excepción original
+            raise
+
         user = serializer.validated_data['user']
-        
+
+        # Disparar señal de login exitoso para que se registre en el log
+        from django.contrib.auth.signals import user_logged_in
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
+
         # Generar tokens JWT
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             'user': {
                 'id': user.id,
@@ -405,6 +464,14 @@ class LogoutView(generics.GenericAPIView):
     )
     def post(self, request):
         try:
+            # Log evento de logout
+            try:
+                from requests.utils import log_event
+                log_event(user=request.user, request=request, action='logout', model_name='User', 
+                          object_id=request.user.id, description=f"Logout: {request.user.username}")
+            except Exception:
+                pass
+            
             refresh_token = request.data.get('refresh_token')
             if refresh_token:
                 token = RefreshToken(refresh_token)

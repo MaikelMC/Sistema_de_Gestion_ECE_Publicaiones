@@ -1,155 +1,164 @@
-import './LogsSistema.css';
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../../../services/api';
+import { toast } from 'react-toastify';
+import './LogsSistema.css';
 
-function LogsSistema() {
+export default function LogsSistema() {
   const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filtro, setFiltro] = useState('todos');
-  const [busqueda, setBusqueda] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState({ action: '', model_name: '', user: '', search: '', ordering: '-created_at', start_date: '', end_date: '' });
 
-  useEffect(() => {
-    cargarLogs();
-  }, []);
-
-  const cargarLogs = async () => {
+  const fetchLogs = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get('/system-logs/');
-      console.log('Respuesta logs:', response.data);
-      
-      // Manejar tanto arrays directos como objetos con results
-      const data = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data.results || response.data.data || []);
-      
-      setLogs(data);
+      const params = {
+        page,
+        page_size: pageSize,
+        action: filters.action || undefined,
+        model_name: filters.model_name || undefined,
+        user: filters.user || undefined,
+        search: filters.search || undefined,
+        ordering: filters.ordering || undefined,
+        start_date: filters.start_date || undefined,
+        end_date: filters.end_date || undefined,
+      };
+      const resp = await api.get('/requests/system-logs/', { params });
+      const data = resp.data;
+      if (data.results !== undefined) {
+        setLogs(data.results);
+        setTotalPages(Math.ceil((data.count || data.results.length) / pageSize));
+      } else if (Array.isArray(data)) {
+        setLogs(data);
+        setTotalPages(1);
+      } else {
+        setLogs([]);
+        setTotalPages(1);
+      }
     } catch (err) {
-      console.error('Error al cargar logs:', err);
-      console.error('Detalles:', err.response?.data);
-      setError('No se pudieron cargar los logs del sistema');
-      setLogs([]);
+      console.error(err);
+      toast.error('No se pudieron cargar los logs');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatearFecha = (fecha) => {
-    if (!fecha) return 'N/A';
-    try {
-      const date = new Date(fecha);
-      return date.toLocaleString('es-MX', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    } catch (error) {
-      return 'N/A';
-    }
+  useEffect(() => {
+    fetchLogs();
+    // eslint-disable-next-line
+  }, [page, filters]);
+
+  const handleExportCsv = () => {
+    const rows = [
+      ['created_at','user','action','model_name','object_id','ip_address','description']
+    ].concat(
+      logs.map(l => [
+        l.created_at,
+        l.user_name || 'Sistema',
+        l.action,
+        l.model_name,
+        l.object_id || '',
+        l.ip_address || '',
+        (l.description || '').replace(/\n/g,' ')
+      ])
+    );
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system_logs_page${page}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const logsFiltrados = logs.filter(log => {
-    // Filtro por acción
-    if (filtro !== 'todos' && log.action !== filtro) {
-      return false;
-    }
-    // Búsqueda en descripción y usuario
-    if (busqueda) {
-      const textoLower = busqueda.toLowerCase();
-      return (
-        log.description?.toLowerCase().includes(textoLower) ||
-        log.user_name?.toLowerCase().includes(textoLower) ||
-        log.user?.username?.toLowerCase().includes(textoLower)
-      );
-    }
-    return true;
-  });
-
-  if (error) {
-    return (
-      <div className="logs-sistema">
-        <header className="panel-header">
-          <h1>⚠️ Logs del Sistema</h1>
-          <p>{error}</p>
-        </header>
-        <section className="card">
-          <button onClick={cargarLogs} className="btn-primario">
-            Reintentar
-          </button>
-        </section>
-      </div>
-    );
-  }
-
   return (
-    <div className="logs-sistema">
-      <header className="panel-header">
-        <h1>📋 Logs del Sistema</h1>
-        <p>Registro de actividades y auditoría</p>
-      </header>
+    <div className="logs-sistema container">
+      <h2>Logs del Sistema</h2>
 
-      <section className="card">
-        <div className="logs-filtros">
-          <input 
-            type="text" 
-            placeholder="🔍 Buscar en logs..." 
-            className="busqueda-input"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-          <select 
-            className="filtro-select"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-          >
-            <option value="todos">Todos los logs</option>
-            <option value="login">Inicios de sesión</option>
-            <option value="logout">Cierres de sesión</option>
-            <option value="create">Creaciones</option>
-            <option value="update">Actualizaciones</option>
-            <option value="delete">Eliminaciones</option>
-            <option value="review">Revisiones</option>
-            <option value="approve">Aprobaciones</option>
-            <option value="reject">Rechazos</option>
-          </select>
-        </div>
-      </section>
+      <div className="logs-filters">
+        <input placeholder="Buscar descripción..." value={filters.search} onChange={e => setFilters({...filters, search: e.target.value, page:1})} />
+        <select value={filters.action} onChange={e => setFilters({...filters, action: e.target.value, page:1})}>
+          <option value="">Todas las acciones</option>
+          <optgroup label="Autenticación">
+            <option value="login_success">Login Exitoso</option>
+            <option value="login_failed">Login Fallido</option>
+            <option value="logout">Cierre de Sesión</option>
+          </optgroup>
+          <optgroup label="Gestión de Usuarios">
+            <option value="user_create">Creación de Usuario</option>
+            <option value="user_update">Actualización de Usuario</option>
+            <option value="user_delete">Eliminación de Usuario</option>
+            <option value="permission_change">Cambio de Permisos</option>
+          </optgroup>
+          <optgroup label="CRUD Recursos">
+            <option value="create">Crear</option>
+            <option value="update">Actualizar</option>
+            <option value="delete">Eliminar</option>
+          </optgroup>
+          <optgroup label="Evaluaciones">
+            <option value="review">Revisión</option>
+            <option value="approve">Aprobación</option>
+            <option value="reject">Rechazo</option>
+          </optgroup>
+          <optgroup label="Seguridad">
+            <option value="user_lock">Bloqueo de Usuario</option>
+            <option value="ip_block">Bloqueo de IP</option>
+            <option value="ip_blocked_attempt">Intento desde IP Bloqueada</option>
+            <option value="admin_unlock">Desbloqueo por Admin</option>
+            <option value="admin_ip_deny">Acceso Admin Denegado por IP</option>
+            <option value="unauthorized_attempt">Intento de Acceso No Autorizado</option>
+          </optgroup>
+          <optgroup label="Sistema">
+            <option value="config_change">Cambio de Configuración</option>
+            <option value="system_error">Error del Sistema</option>
+            <option value="db_error">Error de Base de Datos</option>
+          </optgroup>
+        </select>
+        <input type="date" value={filters.start_date} onChange={e => setFilters({...filters, start_date: e.target.value, page:1})} />
+        <input type="date" value={filters.end_date} onChange={e => setFilters({...filters, end_date: e.target.value, page:1})} />
+        <button onClick={() => { setPage(1); fetchLogs(); }}>Aplicar</button>
+        <button onClick={handleExportCsv}>Exportar CSV</button>
+      </div>
 
-      <section className="card">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <p>Cargando logs...</p>
-          </div>
-        ) : (
-          <div className="logs-list">
-            {logsFiltrados.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '2rem' }}>
-                No se encontraron logs
-              </p>
-            ) : (
-              logsFiltrados.map(log => (
-                <div key={log.id} className="log-item">
-                  <div className="log-info">
-                    <strong>{log.user_name || log.user?.username || 'Sistema'}</strong>
-                    <span>
-                      {log.action_display || log.action || 'Acción'}: {log.description || 'Sin descripción'}
-                    </span>
-                    {log.ip_address && <small>IP: {log.ip_address}</small>}
-                  </div>
-                  <div className="log-fecha">{formatearFecha(log.created_at || log.timestamp)}</div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </section>
+      <table className="logs-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Modelo</th>
+            <th>Obj ID</th>
+            <th>IP</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr><td colSpan="7">Cargando...</td></tr>
+          ) : logs.length === 0 ? (
+            <tr><td colSpan="7">No hay registros</td></tr>
+          ) : logs.map(l => (
+            <tr key={l.id}>
+              <td>{new Date(l.created_at).toLocaleString()}</td>
+              <td>{l.user_name || 'Sistema'}</td>
+              <td>{l.action}</td>
+              <td>{l.model_name}</td>
+              <td>{l.object_id || ''}</td>
+              <td>{l.ip_address || ''}</td>
+              <td style={{maxWidth:400, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}} title={l.description}>{l.description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="logs-pagination">
+        <button disabled={page<=1} onClick={() => setPage(p => Math.max(1, p-1))}>Anterior</button>
+        <span>{page} / {totalPages}</span>
+        <button disabled={page>=totalPages} onClick={() => setPage(p => p+1)}>Siguiente</button>
+      </div>
     </div>
   );
 }
-
-export default LogsSistema;

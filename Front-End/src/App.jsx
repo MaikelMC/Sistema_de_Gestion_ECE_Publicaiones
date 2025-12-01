@@ -24,6 +24,7 @@ import AdminLayout from "./components/Layout/AdminLayout";
 import InicioAdmin from "./pages/Admin/InicioAdmin/InicioAdmin";
 import GestionUsuarios from "./pages/Admin/GestionUsuarios/GestionUsuarios";
 import LogsSistema from "./pages/Admin/LogsSistema/LogsSistema";
+import Notificaciones from "./pages/Admin/Notificaciones/Notificaciones";
 import Configuracion from "./pages/Admin/Configuracion/Configuracion"; // Corregido
 import Footer from "./components/footer";
 
@@ -155,6 +156,7 @@ function App() {
           <Route index element={<Navigate to="/admin/inicio"/>}/>
           <Route path="inicio" element={<InicioAdmin />} />
           <Route path="usuarios" element={<GestionUsuarios />} />
+          <Route path="notificaciones" element={<Notificaciones />} />
           <Route path="logs" element={<LogsSistema />} />
           <Route path="configuracion" element={<Configuracion />} />
         </Route>

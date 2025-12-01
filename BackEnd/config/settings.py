@@ -49,13 +49,15 @@ INSTALLED_APPS = [
     'drf_yasg',
     
     # Local apps
-    'authentication',
+    'authentication.apps.AuthenticationConfig',
     'publications',
     'requests',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Middleware de restricción de IP para rutas administrativas
+    'config.middleware.AdminIPRestrictionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -63,6 +65,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Middleware de auditoría para errores y accesos no autorizados
+    'config.audit_middleware.AuditMiddleware',
 ]
 
 # Custom User Model
@@ -231,3 +235,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Tamaño máximo de archivos subidos: 50MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB en bytes
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB en bytes
+AUTH_LOCKOUT_THRESHOLD = int(os.getenv('AUTH_LOCKOUT_THRESHOLD', '3'))  # intentos fallidos antes de bloquear (por usuario)
+AUTH_LOCKOUT_MINUTES = int(os.getenv('AUTH_LOCKOUT_MINUTES', '5'))      # minutos de bloqueo por usuario
+# Umbral y duración para bloqueo por IP
+AUTH_IP_LOCKOUT_THRESHOLD = int(os.getenv('AUTH_IP_LOCKOUT_THRESHOLD', '10'))
+AUTH_IP_LOCK_MINUTES = int(os.getenv('AUTH_IP_LOCK_MINUTES', '20'))
+
+# Lista blanca de IPs (o coma-separadas) que pueden acceder a /admin
+# Ejemplo en .env: ALLOW_ADMIN_IPS=127.0.0.1,::1,192.168.0.0
+ALLOW_ADMIN_IPS = os.getenv('ALLOW_ADMIN_IPS', '127.0.0.1,::1')
+if isinstance(ALLOW_ADMIN_IPS, str):
+    ALLOW_ADMIN_IPS = [ip.strip() for ip in ALLOW_ADMIN_IPS.split(',') if ip.strip()]

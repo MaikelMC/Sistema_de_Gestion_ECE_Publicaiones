@@ -44,10 +44,15 @@ function Login() {
     } catch (error) {
       console.error('Error en login:', error);
       handleApiError(error);
-      
-      // Mostrar mensaje específico si hay detalles
-      if (error.response?.data?.detail) {
+      // Mostrar mensaje específico si la cuenta está bloqueada temporalmente
+      const lockedMinutes = error?.response?.data?.locked_minutes;
+      if (lockedMinutes) {
+        toast.error(`Cuenta bloqueada temporalmente. Intenta de nuevo en ${lockedMinutes} minuto${lockedMinutes > 1 ? 's' : ''}.`);
+      } else if (error.response?.data?.detail) {
+        // Mostrar detalle genérico si existe
         toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al iniciar sesión.');
       }
     } finally {
       setLoading(false);
