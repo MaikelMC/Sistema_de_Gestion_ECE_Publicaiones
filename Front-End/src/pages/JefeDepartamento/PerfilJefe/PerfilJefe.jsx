@@ -4,6 +4,7 @@ import './PerfilJefe_modal.css';
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import { validateProfile } from '../../../utils/validation';
+import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
 //import { useAuth } from '../../../hooks/useAuth';
 
 function PerfilJefe() {
@@ -15,6 +16,7 @@ function PerfilJefe() {
   const [actividades, setActividades] = useState([]);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalDetalles, setModalDetalles] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Cargar perfil y estadísticas del jefe
@@ -263,6 +265,13 @@ function PerfilJefe() {
               >
                 {isEditing ? '❌ Cancelar' : '✏️ Editar Perfil'}
               </button>
+              <button 
+                className="btn-change-password"
+                onClick={() => setIsPasswordModalOpen(true)}
+                title="Cambiar contraseña"
+              >
+                🔒 Cambiar Contraseña
+              </button>
             </div>
           </div>
 
@@ -492,6 +501,12 @@ function PerfilJefe() {
           </div>
         </div>
       )}
+      
+      {/* Modal de cambio de contraseña */}
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 }

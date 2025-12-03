@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Footer from '../../../components/footer';
 import authService from '../../../services/authService';
 import { validateProfile } from '../../../utils/validation';
+import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
 
 function PerfilTutor() {
   const [userData, setUserData] = useState({
@@ -17,7 +18,7 @@ function PerfilTutor() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
-  
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const cargarDatos = async () => {
@@ -146,6 +147,13 @@ function PerfilTutor() {
               >
                 {isEditing ? '❌ Cancelar' : '✏️ Editar Perfil'}
               </button>
+              <button 
+                className="btn-change-password"
+                onClick={() => setIsPasswordModalOpen(true)}
+                title="Cambiar contraseña"
+              >
+                🔒 Cambiar Contraseña
+              </button>
             </div>
           </div>
 
@@ -218,6 +226,13 @@ function PerfilTutor() {
           </form>
         </section>
       </div>
+      
+      {/* Modal de cambio de contraseña */}
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
+      
       <Footer />
     </div>
   );

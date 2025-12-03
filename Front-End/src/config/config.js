@@ -12,6 +12,7 @@ export const config = {
     LOGOUT: '/auth/logout/',
     PROFILE: '/auth/profile/',
     CHANGE_PASSWORD: '/auth/change-password/',
+    RESET_PASSWORD: '/auth/reset-password/',
     TOKEN: '/token/',
     TOKEN_REFRESH: '/token/refresh/',
     

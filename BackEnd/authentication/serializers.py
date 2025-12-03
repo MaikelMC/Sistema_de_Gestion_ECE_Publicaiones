@@ -5,6 +5,7 @@ from .models import User
 from .models import FailedLoginIP
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.auth.password_validation import validate_password as django_validate_password
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -171,6 +172,56 @@ class ChangePasswordSerializer(serializers.Serializer):
         if user.is_password_reused(new_pw, history_count=5):
             raise serializers.ValidationError({'new_password': 'No puede reutilizar una contraseña reciente.'})
         user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """
+    Serializer para recuperar/rehacer contraseña mediante usuario + email.
+    Esta implementación es simple: recibe `username`, `email`, `new_password` y `new_password2`.
+    Si `username` y `email` coinciden con un usuario activo, se actualiza la contraseña.
+    """
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    new_password2 = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError({"new_password": "Las contraseñas no coinciden."})
+        # Validar fuerza de contraseña con las reglas de Django
+        try:
+            django_validate_password(attrs['new_password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({'new_password': list(e.messages)})
+        return attrs
+
+    def validate_username(self, value):
+        if not User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('Usuario no encontrado.')
+        return value
+
+    def validate_email(self, value):
+        # No rechazamos por email aquí, se comprobará que coincida con el usuario
+        return value
+
+    def save(self, **kwargs):
+        username = self.validated_data['username']
+        email = self.validated_data['email']
+        new_pw = self.validated_data['new_password']
+
+        user = User.objects.filter(username=username, email=email).first()
+        if not user:
+            raise serializers.ValidationError({'detail': 'Usuario y correo no coinciden.'})
+        if not user.is_active:
+            raise serializers.ValidationError({'detail': 'Usuario inactivo.'})
+
+        # Evitar reutilización de contraseñas
+        if user.is_password_reused(new_pw, history_count=5):
+            raise serializers.ValidationError({'new_password': 'No puede reutilizar una contraseña reciente.'})
+
+        user.set_password(new_pw)
         user.save()
         return user
 

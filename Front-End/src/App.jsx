@@ -31,6 +31,7 @@ import Footer from "./components/footer";
 import Register from './components/Layout/Register';
 
 import Login from "./pages/Estudiante/Login/Login";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import { useEffect, useState } from 'react';
 
 // Componente para proteger rutas por rol
@@ -104,7 +105,8 @@ function App() {
             <Login />
           </PublicRoute>
         } />
-        <Route path='register' element={<Register/>}/>
+        <Route path='/register' element={<Register/>}/>
+        <Route path='/forgot-password' element={<ForgotPassword/>}/>
 
         
         {/* RUTAS PARA ESTUDIANTE */}

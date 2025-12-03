@@ -4,6 +4,7 @@ from .views import (
     UserViewSet, LoginView, RegisterView, LogoutView,
     ChangePasswordView, ProfileView, ProfileStatsView
 )
+from .views import ResetPasswordView
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
@@ -14,6 +15,7 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
     
     # Profile endpoints
     path('profile/', ProfileView.as_view(), name='profile'),

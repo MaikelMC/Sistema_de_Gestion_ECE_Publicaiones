@@ -5,6 +5,7 @@ import Footer from '../../../components/footer';
 import { authService } from '../../../services/authService';
 import api from '../../../services/api';
 import { validateProfile } from '../../../utils/validation';
+import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
 
 function Perfil() {
   const [userData, setUserData] = useState({
@@ -20,6 +21,7 @@ function Perfil() {
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [statsData, setStatsData] = useState({
     publicacionesEnviadas: 0,
     solicitudesEnviadas: 0,
@@ -158,6 +160,14 @@ function Perfil() {
                 disabled={loading}
               >
                 {isEditing ? 'Cancelar' : 'Editar Perfil'}
+              </button>
+              <button 
+                className="btn-change-password"
+                onClick={() => setIsPasswordModalOpen(true)}
+                title="Cambiar contraseña"
+                disabled={loading}
+              >
+                🔒 Cambiar Contraseña
               </button>
               <button 
                 className="btn-refresh-stats"
@@ -392,6 +402,13 @@ function Perfil() {
           </div>
         </section>
       </div>
+      
+      {/* Modal de cambio de contraseña */}
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
+      
       <Footer/>
     </div>
   );

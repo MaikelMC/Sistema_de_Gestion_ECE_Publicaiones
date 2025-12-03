@@ -9,6 +9,8 @@ from .serializers import (
     UserSerializer, UserCreateSerializer, UserUpdateSerializer,
     LoginSerializer, ChangePasswordSerializer, UserListSerializer
 )
+# Agregar serializer para reset de contraseña
+from .serializers import ResetPasswordSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -512,6 +514,29 @@ class ChangePasswordView(generics.GenericAPIView):
         return Response({
             'message': 'Contraseña actualizada exitosamente'
         }, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(generics.GenericAPIView):
+    """
+    Vista para resetear contraseña mediante username + email + nueva contraseña.
+    """
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_description="Resetear contraseña con usuario y correo",
+        request_body=ResetPasswordSerializer,
+        responses={
+            200: openapi.Response(description="Contraseña actualizada"),
+            400: "Datos inválidos"
+        },
+        tags=['Autenticación - Auth']
+    )
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'message': 'Contraseña restablecida correctamente'}, status=status.HTTP_200_OK)
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

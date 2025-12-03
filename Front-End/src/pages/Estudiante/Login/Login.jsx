@@ -109,6 +109,18 @@ function Login() {
           <button type="submit" className="btn-login" disabled={loading}>
             {loading ? '⏳ Iniciando sesión...' : '🚀 Iniciar Sesión'}
           </button>
+
+          <div className="forgot-password-link">
+            <button 
+              type="button" 
+              className="btn-forgot-password" 
+              onClick={() => navigate("/forgot-password")} 
+              disabled={loading}
+            >
+              ¿Olvidó su contraseña?
+            </button>
+          </div>
+          
           <p>¿No tienes cuenta?</p>
           
           <button type="button" className="btn-login" onClick={() => navigate("/register")} disabled={loading}>

@@ -89,6 +89,19 @@ export const authService = {
   },
 
   /**
+   * Resetear contraseña (recuperación)
+   */
+  resetPassword: async (username, email, newPassword) => {
+    const response = await api.post(config.endpoints.RESET_PASSWORD, {
+      username,
+      email,
+      new_password: newPassword,
+      new_password2: newPassword
+    });
+    return response.data;
+  },
+
+  /**
    * Obtener usuario actual desde localStorage
    */
   getCurrentUser: () => {

@@ -1,0 +1,29 @@
+/* PerfilTutor.css - Estilos para perfil de tutor */
+.btn-change-password {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.btn-change-password:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-change-password:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.perfil-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
