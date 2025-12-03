@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Footer from '../../../components/footer';
 import { authService } from '../../../services/authService';
 import api from '../../../services/api';
+import { validateProfile } from '../../../utils/validation';
 
 function Perfil() {
   const [userData, setUserData] = useState({
@@ -17,6 +18,7 @@ function Perfil() {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState({
     publicacionesEnviadas: 0,
@@ -69,22 +71,33 @@ function Perfil() {
     e.preventDefault();
     
     try {
+      // validar campos
+      const validationErrors = validateProfile({
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        phone_number: userData.phone_number
+      });
+
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+
       setLoading(true);
-      
-      // Actualizar perfil en el backend
+
+      // Actualizar perfil en el backend (mapear phone_number -> telefono)
       await authService.updateProfile({
-        phone_number: userData.phone_number,
+        telefono: userData.phone_number,
         año_academico: userData.año_academico,
         first_name: userData.first_name,
         last_name: userData.last_name
       });
-      
+
       setIsEditing(false);
-      alert('✅ Perfil actualizado correctamente');
-      
+      setErrors({});
       // Recargar datos
       await cargarDatosReales();
-      
+
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       alert('❌ Error al actualizar el perfil');
@@ -169,6 +182,7 @@ function Perfil() {
                   className="inputr"
                   placeholder="Nombre"
                 />
+                {errors.first_name && <div className="field-error">{errors.first_name}</div>}
               </div>
 
               <div className="form-group">
@@ -181,6 +195,7 @@ function Perfil() {
                   className="inputr"
                   placeholder="Apellidos"
                 />
+                {errors.last_name && <div className="field-error">{errors.last_name}</div>}
               </div>
 
               <div className="form-group">
@@ -232,6 +247,7 @@ function Perfil() {
                   className="inputr"
                   placeholder="+53 12345678"
                 />
+                {errors.phone_number && <div className="field-error">{errors.phone_number}</div>}
               </div>
             </div>
 

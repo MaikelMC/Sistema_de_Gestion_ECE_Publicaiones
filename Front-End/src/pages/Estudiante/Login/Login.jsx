@@ -69,7 +69,7 @@ function Login() {
         <h1>Bienvenido</h1>
         <p className="subtitle">Sistema de Gestión ECE por Publicaciones</p>
         
-        <form onSubmit={handleLogin} className="login-form">
+        <form onSubmit={handleLogin} className="login-form" autoComplete="off">
           <div className="form-group">
             <label className="form-label">Usuario</label>
             <div className="input-group">
@@ -82,6 +82,8 @@ function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={loading}
+                autoComplete="off"
+                name="username"
               />
             </div>
           </div>
@@ -98,6 +100,8 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                autoComplete="new-password"
+                name="password"
               />
             </div>
           </div>

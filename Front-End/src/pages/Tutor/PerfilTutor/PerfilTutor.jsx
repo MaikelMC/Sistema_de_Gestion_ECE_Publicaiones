@@ -3,6 +3,7 @@ import './PerfilTutor.css';
 import React, { useState, useEffect } from 'react';
 import Footer from '../../../components/footer';
 import authService from '../../../services/authService';
+import { validateProfile } from '../../../utils/validation';
 
 function PerfilTutor() {
   const [userData, setUserData] = useState({
@@ -11,12 +12,11 @@ function PerfilTutor() {
     telefono: '',
     departamento: '',
     especialidad: '',
-    añosExperiencia: '',
-    oficina: '',
-    extension: ''
+    
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +33,7 @@ function PerfilTutor() {
         telefono: profile.telefono || '',
         departamento: profile.carrera || profile.grado_academico || '',
         especialidad: profile.especialidad || '',
-        añosExperiencia: profile.years_experience || '',
-        oficina: profile.office || '',
-        extension: profile.extension || ''
+        
       });
     } catch (err) {
       console.error('Error al cargar datos del perfil:', err);
@@ -48,6 +46,20 @@ function PerfilTutor() {
     (async () => {
       try {
         setLoading(true);
+        // Validar campos antes de enviar
+        const validationErrors = validateProfile({
+          nombre: userData.nombre,
+          email: userData.email,
+          telefono: userData.telefono,
+          carrera: userData.departamento,
+          especialidad: userData.especialidad
+        });
+
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          setLoading(false);
+          return;
+        }
         // Preparar payload con campos que el backend soporta
         const nombreCompleto = userData.nombre || '';
         const parts = nombreCompleto.split(' ');
@@ -75,8 +87,9 @@ function PerfilTutor() {
           departamento: updated.carrera || updated.grado_academico || prev.departamento,
           especialidad: updated.especialidad || prev.especialidad
         }));
+        setErrors({});
         setIsEditing(false);
-        alert('✅ Perfil actualizado correctamente');
+        //alert('✅ Perfil actualizado correctamente');
       } catch (err) {
         console.error('Error al guardar perfil:', err);
         alert('❌ Error al actualizar el perfil. Intenta de nuevo.');
@@ -148,6 +161,7 @@ function PerfilTutor() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.nombre && <div className="field-error">{errors.nombre}</div>}
               </div>
 
               <div className="form-group">
@@ -160,6 +174,7 @@ function PerfilTutor() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.email && <div className="field-error">{errors.email}</div>}
               </div>
 
               <div className="form-group">
@@ -172,6 +187,7 @@ function PerfilTutor() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.telefono && <div className="field-error">{errors.telefono}</div>}
               </div>
 
               <div className="form-group">
@@ -184,45 +200,12 @@ function PerfilTutor() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.especialidad && <div className="field-error">{errors.especialidad}</div>}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="añosExperiencia">Años de Experiencia</label>
-                <input
-                  type="number"
-                  id="añosExperiencia"
-                  value={userData.añosExperiencia}
-                  onChange={(e) => handleInputChange('añosExperiencia', e.target.value)}
-                  disabled={!isEditing}
-                  className="inputr"
-                  min="0"
-                  max="50"
-                />
-              </div>
+              
 
-              <div className="form-group">
-                <label htmlFor="oficina">Oficina</label>
-                <input
-                  type="text"
-                  id="oficina"
-                  value={userData.oficina}
-                  onChange={(e) => handleInputChange('oficina', e.target.value)}
-                  disabled={!isEditing}
-                  className="inputr"
-                />
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="extension">Extensión</label>
-                <input
-                  type="text"
-                  id="extension"
-                  value={userData.extension}
-                  onChange={(e) => handleInputChange('extension', e.target.value)}
-                  disabled={!isEditing}
-                  className="inputr"
-                />
-              </div>
             </div>
 
             {isEditing && (

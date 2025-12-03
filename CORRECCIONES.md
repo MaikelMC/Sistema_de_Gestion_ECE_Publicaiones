@@ -13,26 +13,24 @@ Errores del Backend
 
 - Unificar un mismo Registro de Tutor y un Registro de Estudiante -> ECHO ✅
 
-- Crear los grupos con sus respectivos permisos (estudiante, tutor , jefe de carrera y admin)
+- Crear los grupos con sus respectivos permisos (estudiante, tutor , jefe de carrera y admin) -> ECHO ✅
 
 - Agregar un model al agregar publicación para que se cargue y luego liste las publicaciones -> ECHO ✅
 
-- Eliminar el campo estension del perfil de tutor
+- Eliminar el campo estension del perfil de tutor -> ECHO ✅
 
-- Revisar el panel de administracion 
+- Revisar el panel de administracion -> ECHO ✅
 
-- Revisar el panel de jefe de departamento
+- Revisar el panel de jefe de departamento 
 
 - No se encuentra implementado en cambiar contraseña 
 
 - No se encuentra implementado el Olvidar contraseña
 
-Restricción IP para accesos administrativos
+- revisas las validaciones de los campos dentro de cada perfil para que no se puedan ingresar datos incorrectos
 
-Resumen: Limitar acceso al admin y endpoints críticos por lista blanca de IPs o ranges.
-Pasos:
-Añadir middleware que cheque request.META['REMOTE_ADDR'] o HTTP_X_FORWARDED_FOR y compare con ALLOW_ADMIN_IPS en settings.py.
-Aplicar la comprobación solo en rutas de admin (/admin/) o vistas con @staff_member_required.
-Alternativa infra: configurar firewall o reverse-proxy (NGINX) para restringir IPs — preferible en producción.
-Estimación: 2–4 horas (middleware) o ajustar infra (depende).
-Registro de auditoría centralizado y completo (SystemLog instrumentación)
+- el campo telefono dentro del perfil de jefe cuando edito el perfil y lo configuro, no se refleja el numero actualizado 
+
+- Quitar el campo oficina y años de experiencia del perfil de tutor -> ECHO ✅
+
+- Que al actualizar el perfil de cualquier uaurio, se actualice la pagina con los nuevos datos sin saltar la aletra y tener que dar aceptacion para que se actualicen los datos -> ECHO ✅

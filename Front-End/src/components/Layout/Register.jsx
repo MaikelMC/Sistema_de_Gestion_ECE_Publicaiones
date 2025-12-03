@@ -128,7 +128,7 @@ function Register() {
         <h1>Crear Cuenta</h1>
         <p className="subtitle">Únete al Sistema de Gestión ECE</p>
         
-        <form onSubmit={handleSubmit} className="register-form">
+        <form onSubmit={handleSubmit} className="register-form" autoComplete="off">
           <div className="form-group">
             <label className="form-label">Usuario</label>
             <div className="input-group">
@@ -142,6 +142,7 @@ function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                autoComplete="off"
               />
             </div>
           </div>
@@ -195,6 +196,7 @@ function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                autoComplete="off"
               />
             </div>
           </div>
@@ -211,6 +213,7 @@ function Register() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
               />
             </div>
             {passwordStrength && (

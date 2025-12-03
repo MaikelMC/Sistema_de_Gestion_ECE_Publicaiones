@@ -3,7 +3,8 @@ import './PerfilJefe.css';
 import './PerfilJefe_modal.css';
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { useAuth } from '../../../hooks/useAuth';
+import { validateProfile } from '../../../utils/validation';
+//import { useAuth } from '../../../hooks/useAuth';
 
 function PerfilJefe() {
   const [userData, setUserData] = useState(null);
@@ -14,6 +15,7 @@ function PerfilJefe() {
   const [actividades, setActividades] = useState([]);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalDetalles, setModalDetalles] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Cargar perfil y estadísticas del jefe
   useEffect(() => {
@@ -35,11 +37,10 @@ function PerfilJefe() {
       setUserData({
         nombre: response.data.get_full_name || `${response.data.first_name} ${response.data.last_name}`.trim() || response.data.username,
         email: response.data.email || '',
-        telefono: response.data.phone || '',
+        telefono: response.data.telefono || response.data.phone || '',
         departamento: 'Departamento de Ciberseguridad',
         cargo: 'Jefe de Departamento',
-        oficina: response.data.office || '',
-        extension: response.data.extension || ''
+        oficina: response.data.office || ''
       });
       
       // Cargar usuarios activos
@@ -125,6 +126,17 @@ function PerfilJefe() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
+      // Validar campos antes de enviar
+      const validationErrors = validateProfile({
+        nombre: userData.nombre,
+        email: userData.email,
+        telefono: userData.telefono
+      });
+
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
       // Obtener ID del usuario actual
       const meResponse = await api.get('/auth/users/me/');
       const userId = meResponse.data.id;
@@ -132,13 +144,13 @@ function PerfilJefe() {
       // Actualizar datos del usuario
       await api.patch(`/auth/users/${userId}/`, {
         email: userData.email,
-        phone: userData.telefono,
-        office: userData.oficina,
-        extension: userData.extension
+        telefono: userData.telefono,
+        office: userData.oficina
       });
       
       setIsEditing(false);
-      alert('✅ Perfil actualizado correctamente');
+      //alert('✅ Perfil actualizado correctamente');
+      setErrors({});
       cargarPerfil();
     } catch (err) {
       console.error('Error al actualizar perfil:', err);
@@ -266,6 +278,7 @@ function PerfilJefe() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.nombre && <div className="field-error">{errors.nombre}</div>}
               </div>
 
               <div className="form-group">
@@ -278,6 +291,7 @@ function PerfilJefe() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.email && <div className="field-error">{errors.email}</div>}
               </div>
 
               <div className="form-group">
@@ -290,6 +304,7 @@ function PerfilJefe() {
                   disabled={!isEditing}
                   className="inputr"
                 />
+                {errors.telefono && <div className="field-error">{errors.telefono}</div>}
               </div>
             </div>
 

@@ -65,6 +65,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Middleware de seguridad para datos sensibles (no-cache, POST-only)
+    'config.security_middleware.NoCacheMiddleware',
+    'config.security_middleware.SecureFormMiddleware',
     # Middleware de auditoría para errores y accesos no autorizados
     'config.audit_middleware.AuditMiddleware',
 ]
@@ -243,6 +246,31 @@ AUTH_IP_LOCK_MINUTES = int(os.getenv('AUTH_IP_LOCK_MINUTES', '20'))
 
 # Lista blanca de IPs (o coma-separadas) que pueden acceder a /admin
 # Ejemplo en .env: ALLOW_ADMIN_IPS=127.0.0.1,::1,192.168.0.0
+
+# Seguridad: Headers para datos sensibles
+# Evitar caché en navegador para datos sensibles
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# En producción, activar estas configuraciones:
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+
+# Cache settings - desactivar caché para vistas sensibles
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# No cachear respuestas de API con datos sensibles
+CACHE_MIDDLEWARE_SECONDS = 0
 ALLOW_ADMIN_IPS = os.getenv('ALLOW_ADMIN_IPS', '127.0.0.1,::1')
 if isinstance(ALLOW_ADMIN_IPS, str):
     ALLOW_ADMIN_IPS = [ip.strip() for ip in ALLOW_ADMIN_IPS.split(',') if ip.strip()]
