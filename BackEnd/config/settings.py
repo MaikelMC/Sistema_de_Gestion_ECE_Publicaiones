@@ -186,6 +186,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    # Use custom exception handler to normalize unhandled exceptions and log them
+    'EXCEPTION_HANDLER': 'config.drf_exception_handler.custom_exception_handler',
 }
 
 # Swagger configuration

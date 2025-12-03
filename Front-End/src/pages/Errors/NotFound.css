@@ -1,0 +1,37 @@
+.notfound-wrapper{
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.error-card{
+  text-align: center;
+  background: white;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  max-width: 520px;
+}
+.error-card h1{
+  font-size: 3.25rem;
+  margin: 0;
+  color: var(--color-primary);
+}
+.error-card h2{
+  margin: 0.25rem 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+.error-card p{
+  color: var(--color-text-light);
+  margin-bottom: 0.75rem;
+}
+.btn-home{
+  display: inline-block;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '../config/config';
+import { toast } from 'react-toastify';
 
 // Crear instancia de axios
 const api = axios.create({
@@ -33,9 +34,41 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
+    const data = error.response?.data;
+
+    // Manejo centralizado de errores comunes
+    if (status === 400) {
+      // Mostrar detalles de validación si están disponibles
+      const message = data?.detail || JSON.stringify(data) || 'Bad Request';
+      toast.error(message, { autoClose: 4000 });
+      return Promise.reject(error);
+    }
+
+    if (status === 403) {
+      // Navegar a página de acceso denegado
+      window.location.href = '/forbidden';
+      return Promise.reject(error);
+    }
+
+    if (status === 404) {
+      // Para peticiones GET a recursos, mostrar NotFound SPA
+      if ((originalRequest?.method || '').toLowerCase() === 'get') {
+        window.location.href = '/not-found';
+        return Promise.reject(error);
+      }
+      toast.info('Recurso no encontrado (404)', { autoClose: 3000 });
+      return Promise.reject(error);
+    }
+
+    if (status === 500) {
+      // Redirigir a una página de error del servidor
+      window.location.href = '/server-error';
+      return Promise.reject(error);
+    }
 
     // Si el token expiró, intentar renovarlo
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -63,6 +96,9 @@ api.interceptors.response.use(
       }
     }
 
+    // Si no se manejó arriba, mostrar mensaje genérico para el usuario
+    const fallback = data?.detail || error.message || 'Error en la petición';
+    toast.error(fallback, { autoClose: 4000 });
     return Promise.reject(error);
   }
 );

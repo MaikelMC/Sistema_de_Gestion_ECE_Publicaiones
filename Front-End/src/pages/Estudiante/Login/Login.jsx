@@ -121,9 +121,8 @@ function Login() {
             </button>
           </div>
           
-          <p>¿No tienes cuenta?</p>
-          
-          <button type="button" className="btn-login" onClick={() => navigate("/register")} disabled={loading}>
+          <p className="small-note">¿No tienes cuenta?</p>
+          <button type="button" className="btn-register" onClick={() => navigate("/register")} disabled={loading}>
             📝 Registrarse
           </button>
           

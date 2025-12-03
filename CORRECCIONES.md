@@ -23,13 +23,13 @@ Errores del Backend
 
 - Revisar el panel de jefe de departamento 
 
-- No se encuentra implementado en cambiar contraseña 
+- No se encuentra implementado en cambiar contraseña -> ECHO ✅
 
-- No se encuentra implementado el Olvidar contraseña
+- No se encuentra implementado el Olvidar contraseña -> ECHO ✅
 
-- revisas las validaciones de los campos dentro de cada perfil para que no se puedan ingresar datos incorrectos
+- revisas las validaciones de los campos dentro de cada perfil para que no se puedan ingresar datos incorrectos -> ECHO ✅
 
-- el campo telefono dentro del perfil de jefe cuando edito el perfil y lo configuro, no se refleja el numero actualizado 
+- el campo telefono dentro del perfil de jefe cuando edito el perfil y lo configuro, no se refleja el numero actualizado -> ECHO ✅
 
 - Quitar el campo oficina y años de experiencia del perfil de tutor -> ECHO ✅
 

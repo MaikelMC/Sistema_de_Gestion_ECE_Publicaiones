@@ -117,3 +117,9 @@ admin.site.index_title = 'Administración — Sistema ECE'
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Custom error handlers (Django will use these when DEBUG=False)
+handler400 = 'config.views.custom_400'
+handler403 = 'config.views.custom_403'
+handler404 = 'config.views.custom_404'
+handler500 = 'config.views.custom_500'

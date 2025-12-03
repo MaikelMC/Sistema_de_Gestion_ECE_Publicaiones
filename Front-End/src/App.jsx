@@ -32,6 +32,9 @@ import Register from './components/Layout/Register';
 
 import Login from "./pages/Estudiante/Login/Login";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import NotFound from './pages/Errors/NotFound';
+import ServerError from './pages/Errors/ServerError';
+import Forbidden from './pages/Errors/Forbidden';
 import { useEffect, useState } from 'react';
 
 // Componente para proteger rutas por rol
@@ -163,8 +166,11 @@ function App() {
           <Route path="configuracion" element={<Configuracion />} />
         </Route>
 
-        {/* RUTA POR DEFECTO */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* RUTAS DE ERROR Y RUTA POR DEFECTO */}
+        <Route path="/server-error" element={<ServerError/>} />
+        <Route path="/forbidden" element={<Forbidden/>} />
+        <Route path="/not-found" element={<NotFound/>} />
+        <Route path="*" element={<NotFound/>} />
       </Routes>
       <ToastContainer
         position="top-right"
