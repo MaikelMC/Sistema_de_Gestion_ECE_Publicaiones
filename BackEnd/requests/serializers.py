@@ -8,7 +8,6 @@ class ECERequestSerializer(serializers.ModelSerializer):
     Serializer principal para solicitudes ECE
     """
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
-    student_matricula = serializers.CharField(source='student.matricula', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.get_full_name', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     file_url = serializers.SerializerMethodField()
@@ -16,7 +15,7 @@ class ECERequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ECERequest
         fields = [
-            'id', 'student', 'student_name', 'student_matricula', 'file',
+            'id', 'student', 'student_name', 'file',
             'file_url', 'description', 'status', 'status_display',
             'reviewed_by', 'reviewed_by_name', 'review_comments',
             'review_date', 'created_at', 'updated_at'

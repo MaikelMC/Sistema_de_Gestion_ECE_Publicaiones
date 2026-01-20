@@ -63,6 +63,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
             if value < 1 or value > 4:
                 raise serializers.ValidationError("El año debe estar entre 1 y 4.")
         return value
+
+    def validate_first_name(self, value):
+        # Aceptar letras, espacios, guiones y apóstrofes (incluye acentos y ñ)
+        import re
+        if value and not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$", value.strip()):
+            raise serializers.ValidationError("El nombre solo debe contener letras y espacios.")
+        return value
+
+    def validate_last_name(self, value):
+        import re
+        if value and not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$", value.strip()):
+            raise serializers.ValidationError("El apellido solo debe contener letras y espacios.")
+        return value
     
     def create(self, validated_data):
         validated_data.pop('password2')
@@ -112,17 +125,19 @@ class LoginSerializer(serializers.Serializer):
             if user_obj and user_obj.locked_until and user_obj.locked_until > timezone.now():
                 raise serializers.ValidationError('Cuenta temporalmente bloqueada. Intente más tarde.')
 
+            # DESHABILITADO TEMPORALMENTE PARA DESARROLLO
             # Comprobar bloqueo por IP
-            req = self.context.get('request')
-            if req is not None:
-                xff = req.META.get('HTTP_X_FORWARDED_FOR')
-                ip = xff.split(',')[0].strip() if xff else req.META.get('REMOTE_ADDR')
-                try:
-                    ip_rec = FailedLoginIP.objects.filter(ip_address=ip).first()
-                except Exception:
-                    ip_rec = None
-                if ip_rec and ip_rec.blocked_until and ip_rec.blocked_until > timezone.now():
-                    raise serializers.ValidationError('Intentos desde esta IP temporalmente bloqueados.')
+            # req = self.context.get('request')
+            # if req is not None:
+            #     xff = req.META.get('HTTP_X_FORWARDED_FOR')
+            #     ip = xff.split(',')[0].strip() if xff else req.META.get('REMOTE_ADDR')
+            #     try:
+            #         ip_rec = FailedLoginIP.objects.filter(ip_address=ip).first()
+            #     except Exception:
+            #         ip_rec = None
+            #     if ip_rec and ip_rec.blocked_until and ip_rec.blocked_until > timezone.now():
+            #         raise serializers.ValidationError('Intentos desde esta IP temporalmente bloqueados.')
+            req = self.context.get('request')  # Mantener req para el registro de fallos
 
             user = authenticate(username=username, password=password)
 

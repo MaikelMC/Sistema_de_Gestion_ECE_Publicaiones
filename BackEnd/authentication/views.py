@@ -127,7 +127,8 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def tutores(self, request):
         """Listar solo tutores"""
-        tutores = User.objects.filter(role='tutor', activo=True)
+        # Incluir usuarios con rol 'tutor' y también 'jefe' (pueden actuar como tutores)
+        tutores = User.objects.filter(role__in=['tutor', 'jefe'], activo=True)
         serializer = UserListSerializer(tutores, many=True)
         return Response(serializer.data)
     

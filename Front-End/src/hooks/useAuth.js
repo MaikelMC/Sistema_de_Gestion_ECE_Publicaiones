@@ -12,13 +12,28 @@ export const useAuth = () => {
 
   useEffect(() => {
     checkAuth();
+    // Escuchar actualizaciones globales del usuario (p.ej. después de editar perfil)
+    const onUserUpdated = (e) => {
+      try {
+        const updated = e?.detail || authService.getCurrentUser();
+        if (updated) {
+          localStorage.setItem('user', JSON.stringify(updated));
+          setUser(updated);
+          setIsAuthenticated(true);
+        }
+      } catch (err) { console.error('user:updated handler error', err); }
+    };
+    window.addEventListener('user:updated', onUserUpdated);
     
     // Verificar autenticación y actualizar datos del usuario cada 2 minutos
     const interval = setInterval(() => {
       refreshUserData();
     }, 2 * 60 * 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('user:updated', onUserUpdated);
+    };
   }, []);
 
   const refreshUserData = async () => {

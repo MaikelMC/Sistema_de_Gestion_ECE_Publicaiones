@@ -72,9 +72,10 @@ class PublicationViewSet(viewsets.ModelViewSet):
         if user.role == 'estudiante':
             queryset = queryset.filter(student=user)
         elif user.role == 'tutor':
-            # Tutores ven publicaciones de sus estudiantes asignados
+            # Tutores ven publicaciones de sus estudiantes asignados O donde ellos son el tutor
+            from django.db.models import Q
             student_ids = TutorStudent.objects.filter(tutor=user, is_active=True).values_list('student_id', flat=True)
-            queryset = queryset.filter(student_id__in=student_ids)
+            queryset = queryset.filter(Q(student_id__in=student_ids) | Q(tutor=user))
         
         return queryset
     
@@ -433,18 +434,52 @@ class TutorStudentViewSet(viewsets.ModelViewSet):
         return queryset
     
     @swagger_auto_schema(
-        operation_description="Obtener estudiantes asignados al tutor actual",
+        operation_description="Obtener estudiantes asignados al tutor actual o que tienen publicaciones con él",
         responses={200: TutorStudentSerializer(many=True)},
         tags=['Publicaciones - Relaciones Tutor-Estudiante']
     )
     @action(detail=False, methods=['get'])
     def my_students(self, request):
-        """Obtener estudiantes asignados al tutor actual"""
+        """Obtener estudiantes asignados al tutor actual o con publicaciones"""
         if request.user.role != 'tutor':
             return Response({'error': 'Solo tutores pueden acceder'}, status=status.HTTP_403_FORBIDDEN)
         
+        # Obtener relaciones formales
         relations = self.get_queryset().filter(tutor=request.user, is_active=True)
-        serializer = TutorStudentSerializer(relations, many=True)
+        
+        # Obtener estudiantes con publicaciones donde este tutor está asignado
+        from authentication.models import User
+        students_with_publications = Publication.objects.filter(
+            tutor=request.user
+        ).values_list('student_id', flat=True).distinct()
+        
+        # Crear relaciones virtuales para estudiantes que no tienen relación formal
+        existing_student_ids = set(relations.values_list('student_id', flat=True))
+        virtual_relations = []
+        
+        for student_id in students_with_publications:
+            if student_id not in existing_student_ids:
+                try:
+                    student = User.objects.get(id=student_id)
+                    # Crear objeto temporal (no guardado en BD)
+                    from django.utils import timezone
+                    virtual_relation = TutorStudent(
+                        id=None,
+                        tutor=request.user,
+                        student=student,
+                        is_active=True,
+                        progress=0,
+                        assigned_date=timezone.now().date(),
+                        created_at=timezone.now(),
+                        updated_at=timezone.now()
+                    )
+                    virtual_relations.append(virtual_relation)
+                except User.DoesNotExist:
+                    pass
+        
+        # Combinar relaciones
+        all_relations = list(relations) + virtual_relations
+        serializer = TutorStudentSerializer(all_relations, many=True)
         return Response(serializer.data)
     
     @swagger_auto_schema(

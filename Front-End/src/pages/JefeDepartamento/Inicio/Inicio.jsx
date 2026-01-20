@@ -13,8 +13,7 @@ function Inicio() {
     solicitudesAprobadas: 0,
     solicitudesRechazadas: 0,
     publicacionesRegistradas: 0,
-    estudiantesActivos: 0,
-    promedioAprobacion: 0
+    estudiantesActivos: 0
   });
   const [estudiantes, setEstudiantes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +25,21 @@ function Inicio() {
       console.log('🔄 Usuario cambió, recargando estadísticas:', user.username);
       cargarEstadisticas();
     }
+
+    const handler = () => {
+      console.log('📣 Notificación de usuarios actualizados recibida — recargando estudiantes');
+      cargarEstadisticas();
+    };
+
+    // Escuchar eventos cross-tab y en la misma pestaña
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'users_updated') handler();
+    });
+    window.addEventListener('users_updated', handler);
+
+    return () => {
+      window.removeEventListener('users_updated', handler);
+    };
   }, [user]);
 
   const cargarEstadisticas = async () => {
@@ -45,9 +59,9 @@ function Inicio() {
       // Cargar estudiantes y solicitudes revisadas por ESTE jefe
       console.log(`🔍 Buscando solicitudes con reviewed_by=${jefeId}`);
       const [estudiantesRes, solicitudesRes, publicacionesRes] = await Promise.all([
-        api.get('/auth/users/?role=estudiante'),
-        api.get(`/requests/?reviewed_by=${jefeId}`),
-        api.get('/publications/stats/')
+        api.get('/auth/users/', { params: { role: 'estudiante', t: Date.now() } }),
+        api.get(`/requests/`, { params: { reviewed_by: jefeId, t: Date.now() } }),
+        api.get('/publications/stats/', { params: { t: Date.now() } })
       ]);
 
       const listaEstudiantes = estudiantesRes.data.results || estudiantesRes.data || [];
@@ -79,15 +93,17 @@ function Inicio() {
       
       // Calcular tasa de aprobación
       const total = aprobadas + rechazadas;
-      const tasaAprobacion = total > 0 ? Math.round((aprobadas / total) * 100) : 0;
-      
+
+      // Normalizar conteo de publicaciones de la posible respuesta de /publications/stats/
+      const pubsData = publicacionesRes?.data || {};
+      const publicacionesCount = (pubsData.total ?? pubsData.count ?? pubsData.total_results ?? (Array.isArray(pubsData.results) ? pubsData.results.length : 0)) || 0;
+
       setStatsData({
         solicitudesPendientes: pendientes,
         solicitudesAprobadas: aprobadas,
         solicitudesRechazadas: rechazadas,
-        publicacionesRegistradas: publicacionesRes.data.total || 0,
-        estudiantesActivos: listaEstudiantes.length,
-        promedioAprobacion: tasaAprobacion
+        publicacionesRegistradas: publicacionesCount,
+        estudiantesActivos: listaEstudiantes.length
       });
 
       setEstudiantes(listaEstudiantes);
@@ -106,7 +122,7 @@ function Inicio() {
         <img src="/Imagenes/logouci.webp" alt="Logo UCI" className="jefe-profile-photo" />
         <div>
           <h1>Bienvenido Jefe de Departamento</h1>
-          <p className="jefe-welcome-subtitle">Sistema de Gestión ECE - Vista Administrativa</p>
+          <p className="jefe-welcome-subtitle">Vista Administrativa</p>
         </div>
       </header>
 
@@ -125,84 +141,49 @@ function Inicio() {
         </div>
       ) : (
         <>
-      {/* Tarjetas de Estadísticas Rápidas */}
-      <section className="jefe-stats-grid">
-        <div className="jefe-stat-card">
+      {/* Tarjetas de Estadísticas Rápidas (usando estilos compartidos de stats) */}
+      <section className="stats-cards">
+        <div className="stat-card">
           <div className="stat-icon">📝</div>
           <div className="stat-info">
-            <h3>{statsData.solicitudesPendientes}</h3>
-            <p>Solicitudes Pendientes</p>
+            <div className="stat-number">{statsData.solicitudesPendientes}</div>
+            <div className="stat-label">Solicitudes Pendientes</div>
           </div>
         </div>
-        
-        <div className="jefe-stat-card">
+
+        <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-info">
-            <h3>{statsData.solicitudesAprobadas}</h3>
-            <p>Solicitudes Aprobadas</p>
+            <div className="stat-number">{statsData.solicitudesAprobadas}</div>
+            <div className="stat-label">Solicitudes Aprobadas</div>
           </div>
         </div>
-        
-        <div className="jefe-stat-card">
+
+        <div className="stat-card">
           <div className="stat-icon">❌</div>
           <div className="stat-info">
-            <h3>{statsData.solicitudesRechazadas}</h3>
-            <p>Solicitudes Rechazadas</p>
+            <div className="stat-number">{statsData.solicitudesRechazadas}</div>
+            <div className="stat-label">Solicitudes Rechazadas</div>
           </div>
         </div>
-        
-        <div className="jefe-stat-card">
+
+        <div className="stat-card">
           <div className="stat-icon">📄</div>
           <div className="stat-info">
-            <h3>{statsData.publicacionesRegistradas}</h3>
-            <p>Publicaciones Registradas</p>
+            <div className="stat-number">{statsData.publicacionesRegistradas}</div>
+            <div className="stat-label">Publicaciones Registradas</div>
           </div>
         </div>
-        
-        <div className="jefe-stat-card">
+
+        <div className="stat-card">
           <div className="stat-icon">👥</div>
           <div className="stat-info">
-            <h3>{statsData.estudiantesActivos}</h3>
-            <p>Estudiantes Activos</p>
+            <div className="stat-number">{statsData.estudiantesActivos}</div>
+            <div className="stat-label">Estudiantes Activos</div>
           </div>
         </div>
-        
-        <div className="jefe-stat-card">
-          <div className="stat-icon">📊</div>
-          <div className="stat-info">
-            <h3>{statsData.promedioAprobacion}%</h3>
-            <p>Tasa de Aprobación</p>
-          </div>
-        </div>
-      </section>
 
-      {/* Accesos Rápidos - Ancho completo */}
-      <section className="jefe-card accesos-rapidos-card-full">
-        <h2>⚡ Accesos Rápidos</h2>
-        <div className="accesos-rapidos-grid">
-          <div 
-            className="acceso-rapido-item clickable"
-            onClick={() => navigate('/jefe/gestion-solicitudes')}
-          >
-            <div className="acceso-icon">📝</div>
-            <div className="acceso-content">
-              <p><strong>Gestión de Solicitudes</strong></p>
-              <small>Revisar y aprobar solicitudes ECE</small>
-            </div>
-            <div className="acceso-arrow">→</div>
-          </div>
-          <div 
-            className="acceso-rapido-item clickable"
-            onClick={() => navigate('/jefe/gestion-publicaciones')}
-          >
-            <div className="acceso-icon">📄</div>
-            <div className="acceso-content">
-              <p><strong>Gestión de Publicaciones</strong></p>
-              <small>Clasificar publicaciones por nivel</small>
-            </div>
-            <div className="acceso-arrow">→</div>
-          </div>
-        </div>
+        {/* Tasa de Aprobación eliminada */}
       </section>
 
       {/* Lista de Estudiantes Activos */}
@@ -223,7 +204,7 @@ function Inicio() {
                       : estudiante.full_name || estudiante.username || 'Sin nombre'
                     }
                   </h4>
-                  <p className="estudiante-matricula">📋 {estudiante.matricula || 'Sin matrícula'}</p>
+                  <p className="estudiante-anno">📋 Año  {estudiante.anno || 'Sin año'}</p>
                   <p className="estudiante-email">✉️ {estudiante.email}</p>
                 </div>
                 <div className="estudiante-stats">

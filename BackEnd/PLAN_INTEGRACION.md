@@ -4,7 +4,7 @@
 
 ### 1.1 Authentication App (authentication/models.py)
 - ✅ **User**: Modelo extendido con roles (estudiante, tutor, jefe, admin)
-  - Campos: role, matricula, carrera, telefono, especialidad, grado_academico
+  - Campos: role, carrera, telefono, especialidad, grado_academico
   - Métodos: is_estudiante, is_tutor, is_jefe
 
 ### 1.2 Publications App (publications/models.py)

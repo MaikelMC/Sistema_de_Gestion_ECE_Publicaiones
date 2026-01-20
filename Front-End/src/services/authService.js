@@ -15,6 +15,7 @@ export const authService = {
       localStorage.setItem('access_token', response.data.tokens.access);
       localStorage.setItem('refresh_token', response.data.tokens.refresh);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      try { window.dispatchEvent(new CustomEvent('user:updated', { detail: response.data.user })); } catch(e){}
     }
     
     return response.data;
@@ -30,6 +31,7 @@ export const authService = {
       localStorage.setItem('access_token', response.data.tokens.access);
       localStorage.setItem('refresh_token', response.data.tokens.refresh);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      try { window.dispatchEvent(new CustomEvent('user:updated', { detail: response.data.user })); } catch(e){}
     }
     
     return response.data;
@@ -73,6 +75,7 @@ export const authService = {
   updateProfile: async (data) => {
     const response = await api.patch(config.endpoints.PROFILE, data);
     localStorage.setItem('user', JSON.stringify(response.data));
+    try { window.dispatchEvent(new CustomEvent('user:updated', { detail: response.data })); } catch(e){}
     return response.data;
   },
 
@@ -107,6 +110,14 @@ export const authService = {
   getCurrentUser: () => {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
+  },
+
+  /**
+   * Obtener lista de tutores activos
+   */
+  getTutores: async () => {
+    const response = await api.get('/auth/users/tutores/');
+    return response.data;
   },
 
   /**

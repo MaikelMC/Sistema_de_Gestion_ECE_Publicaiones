@@ -5,7 +5,7 @@ function Footer(){
     <footer className="footer">
             <div className="footer-content">
                 <div className="footer-copyright">
-                    <p>© 2023 Universidad de Ciencias Informáticas. Todos los derechos reservados.</p>
+                    <p>© 2026 Universidad de Ciencias Informáticas. Todos los derechos reservados.</p>
                 </div>
             </div>
         </footer>

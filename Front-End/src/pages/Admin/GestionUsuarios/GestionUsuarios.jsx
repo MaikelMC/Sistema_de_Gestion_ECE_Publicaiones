@@ -1,6 +1,8 @@
 import './GestionUsuarios.css';
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { toast } from 'react-toastify';
+import showConfirm from '../../../utils/showConfirm';
 
 function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -17,13 +19,12 @@ function GestionUsuarios() {
       setLoading(true);
       setError(null);
       
-      // Construir URL con filtros
-      let url = '/auth/users/';
-      if (filtro !== 'todos') {
-        url += `?role=${filtro}`;
-      }
-      
-      const response = await api.get(url);
+      // Construir parámetros con filtros y anti-cache
+      const params = {};
+      if (filtro !== 'todos') params.role = filtro;
+      params.t = Date.now();
+
+      const response = await api.get('/auth/users/', { params });
       console.log('Respuesta usuarios:', response.data);
       
       // Manejar tanto arrays directos como objetos con results
@@ -53,10 +54,17 @@ function GestionUsuarios() {
         user.id === userId ? { ...user, role: nuevoRol } : user
       ));
       
-      alert(`✅ Rol actualizado a ${nuevoRol}`);
+      //alert(`✅ Rol actualizado a ${nuevoRol}`);
+      // Notificar a otras vistas que los usuarios cambiaron
+      try {
+        localStorage.setItem('users_updated', Date.now().toString());
+        window.dispatchEvent(new Event('users_updated'));
+      } catch (e) {
+        console.warn('No se pudo notificar actualización de usuarios:', e);
+      }
     } catch (err) {
       console.error('Error al cambiar rol:', err);
-      alert('❌ Error al cambiar el rol');
+      toast.error('❌ Error al cambiar el rol');
     }
   };
 
@@ -74,28 +82,38 @@ function GestionUsuarios() {
         user.id === userId ? { ...user, activo: nuevoEstado } : user
       ));
       
-      alert(`✅ Usuario ${nuevoEstado ? 'activado' : 'desactivado'}`);
+      toast.success(`✅ Usuario ${nuevoEstado ? 'activado' : 'desactivado'}`);
+      // Notificar a otras vistas que los usuarios cambiaron
+      try {
+        localStorage.setItem('users_updated', Date.now().toString());
+        window.dispatchEvent(new Event('users_updated'));
+      } catch (e) {
+        console.warn('No se pudo notificar actualización de usuarios:', e);
+      }
     } catch (err) {
       console.error('Error al cambiar estado:', err);
-      alert('❌ Error al cambiar el estado del usuario');
+      toast.error('❌ Error al cambiar el estado del usuario');
     }
   };
 
   const eliminarUsuario = async (userId) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      return;
-    }
-    
+    const confirmado = await showConfirm({ message: '¿Estás seguro de que quieres eliminar este usuario?' });
+    if (!confirmado) return;
     try {
       await api.delete(`/auth/users/${userId}/`);
-      
       // Remover localmente
       setUsuarios(usuarios.filter(user => user.id !== userId));
-      
-      alert('✅ Usuario eliminado correctamente');
+      toast.success('✅ Usuario eliminado correctamente');
+      // Notificar a otras vistas que los usuarios cambiaron
+      try {
+        localStorage.setItem('users_updated', Date.now().toString());
+        window.dispatchEvent(new Event('users_updated'));
+      } catch (e) {
+        console.warn('No se pudo notificar actualización de usuarios:', e);
+      }
     } catch (err) {
       console.error('Error al eliminar usuario:', err);
-      alert('❌ Error al eliminar el usuario');
+      toast.error('❌ Error al eliminar el usuario');
     }
   };
 
@@ -210,9 +228,7 @@ function GestionUsuarios() {
                                 ? `${usuario.first_name} ${usuario.last_name}`
                                 : usuario.username || 'Sin nombre'}
                             </div>
-                            {usuario.matricula && (
-                              <div className="user-matricula">Mat: {usuario.matricula}</div>
-                            )}
+                            {/* matrícula removed - field not used */}
                           </div>
                         </div>
                       </td>

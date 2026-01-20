@@ -2,6 +2,7 @@
 import './GestionPublicasiones.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { toast } from 'react-toastify';
 
 function GestionPublicasiones() {
   const [publicaciones, setPublicaciones] = useState([]);
@@ -95,7 +96,7 @@ function GestionPublicasiones() {
       });
       
       console.log('✅ Respuesta del servidor:', response.data);
-      alert(`✅ Publicación aprobada`);
+      toast.success('✅ Publicación aprobada');
       
       // Recargar publicaciones
       await cargarPublicaciones();
@@ -108,7 +109,7 @@ function GestionPublicasiones() {
       console.error('Headers:', err.response?.headers);
       
       const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Error desconocido';
-      alert(`❌ Error al aprobar la publicación: ${errorMsg}`);
+      toast.error(`❌ Error al aprobar la publicación: ${errorMsg}`);
     } finally {
       setProcesando(false);
     }
@@ -116,7 +117,7 @@ function GestionPublicasiones() {
 
   const rechazarPublicacion = async (id) => {
     if (!comentario.trim()) {
-      alert('Por favor, agrega un comentario explicando el rechazo.');
+      toast.warning('Por favor, agrega un comentario explicando el rechazo.');
       return;
     }
 
@@ -128,7 +129,7 @@ function GestionPublicasiones() {
         comments: comentario
       });
       
-      alert('❌ Publicación rechazada correctamente');
+      toast.success('❌ Publicación rechazada correctamente');
       
       // Recargar publicaciones
       await cargarPublicaciones();
@@ -137,7 +138,7 @@ function GestionPublicasiones() {
     } catch (err) {
       console.error('Error al rechazar publicación:', err);
       console.error('Detalles del error:', err.response?.data);
-      alert('❌ Error al rechazar la publicación');
+      toast.error('❌ Error al rechazar la publicación');
     } finally {
       setProcesando(false);
     }
@@ -307,22 +308,20 @@ function GestionPublicasiones() {
                   >
                     Nivel {publicacion.nivel}
                   </div>
-                  <div 
-                    className="estado-badge"
-                    style={{ backgroundColor: getEstadoColor(publicacion.status) }}
-                  >
-                    {getEstadoTexto(publicacion.status)}
+                  <div className={`estado-badge publicado-badge`}>
+                    Publicado
                   </div>
                 </div>
               </div>
 
               <div className="publicacion-details">
                 <p className="resumen">{publicacion.summary}</p>
-                {publicacion.doi && (
+                {publicacion.doi ? (
                   <div className="detail-item">
-                    <strong>DOI:</strong> {publicacion.doi}
+                    <strong>DOI:</strong>{' '}
+                    <a href={`https://doi.org/${publicacion.doi}`} target="_blank" rel="noopener noreferrer">{publicacion.doi}</a>
                   </div>
-                )}
+                ) : null}
                 {publicacion.reviewed_at && (
                   <div className="detail-item">
                     <strong>Revisado:</strong> {new Date(publicacion.reviewed_at).toLocaleDateString('es-ES')} por {publicacion.reviewed_by_name || 'N/A'}
@@ -495,7 +494,7 @@ function GestionPublicasiones() {
                     className="btn-confirmar-rechazo"
                     onClick={() => {
                       if (!comentario.trim()) {
-                        alert('Por favor, agrega un comentario explicando el rechazo.');
+                        toast.warning('Por favor, agrega un comentario explicando el rechazo.');
                         return;
                       }
                       rechazarPublicacion(publicacionSeleccionada.id);

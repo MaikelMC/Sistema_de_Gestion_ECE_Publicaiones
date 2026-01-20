@@ -60,7 +60,6 @@ def main():
         role='estudiante',
         first_name='María',
         last_name='López García',
-        matricula='C411',
         carrera='Ingeniería en Ciencias Informáticas',
         telefono='53123456',
         activo=True
@@ -73,7 +72,6 @@ def main():
         role='estudiante',
         first_name='Juan',
         last_name='Pérez Rodríguez',
-        matricula='C412',
         carrera='Ingeniería en Ciberseguridad',
         telefono='53234567',
         activo=True
@@ -86,7 +84,6 @@ def main():
         role='estudiante',
         first_name='Ana',
         last_name='Martínez Díaz',
-        matricula='C413',
         carrera='Ingeniería en Ciencias Informáticas',
         telefono='53345678',
         activo=True

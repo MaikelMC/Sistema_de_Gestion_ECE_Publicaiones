@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from 'react-toastify';
 //import authService from '../../services/authService';
 import { handleApiError } from '../../utils/helpers';
+import { validators } from '../../utils/validation';
 import './Register.css';
 
 function Register() {
@@ -60,6 +61,16 @@ function Register() {
 
     if (!formData.email.endsWith("@uci.cu") && !formData.email.endsWith("@estudiantes.uci.cu")) {
       toast.error("Debe usar un correo institucional UCI");
+      return;
+    }
+
+    // Validar nombres: solo letras, espacios, guiones o apóstrofes
+    if (!validators.isAlpha(formData.first_name)) {
+      toast.error('El nombre solo debe contener letras y espacios.');
+      return;
+    }
+    if (!validators.isAlpha(formData.last_name)) {
+      toast.error('El apellido solo debe contener letras y espacios.');
       return;
     }
 

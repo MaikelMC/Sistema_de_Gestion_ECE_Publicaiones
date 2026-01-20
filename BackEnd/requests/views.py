@@ -28,7 +28,7 @@ class ECERequestViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'student', 'reviewed_by']
-    search_fields = ['description', 'student__username', 'student__matricula']
+    search_fields = ['description', 'student__username']
     ordering_fields = ['created_at', 'review_date']
     ordering = ['-created_at']
     
@@ -45,7 +45,7 @@ class ECERequestViewSet(viewsets.ModelViewSet):
             openapi.Parameter('status', openapi.IN_QUERY, description="Filtrar por estado", type=openapi.TYPE_STRING),
             openapi.Parameter('student', openapi.IN_QUERY, description="Filtrar por estudiante", type=openapi.TYPE_INTEGER),
             openapi.Parameter('reviewed_by', openapi.IN_QUERY, description="Filtrar por revisor", type=openapi.TYPE_INTEGER),
-            openapi.Parameter('search', openapi.IN_QUERY, description="Búsqueda en descripción, username o matrícula", type=openapi.TYPE_STRING),
+            openapi.Parameter('search', openapi.IN_QUERY, description="Búsqueda en descripción o username", type=openapi.TYPE_STRING),
         ],
         tags=['Solicitudes ECE']
     )

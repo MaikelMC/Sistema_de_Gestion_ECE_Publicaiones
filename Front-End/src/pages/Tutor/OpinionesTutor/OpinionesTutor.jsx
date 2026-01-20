@@ -2,6 +2,7 @@
 import './OpinionesTutor.css';
 import React, { useState, useEffect } from 'react';
 import tutorService from '../../../services/tutorService';
+import { toast } from 'react-toastify';
 
 function OpinionesTutor() {
   const [publicacionesPendientes, setPublicacionesPendientes] = useState([]);
@@ -40,7 +41,7 @@ function OpinionesTutor() {
 
   const emitirOpinion = async (publicacionId) => {
     if (!opinion.trim()) {
-      alert('Por favor, escribe tu opinión antes de enviar.');
+      toast.warning('Por favor, escribe tu opinión antes de enviar.');
       return;
     }
 
@@ -53,7 +54,7 @@ function OpinionesTutor() {
         recommendation: recomendacion
       });
 
-      alert('✅ Opinión emitida correctamente');
+      toast.success('✅ Opinión emitida correctamente');
       
       // Recargar datos
       await cargarDatos();
@@ -65,7 +66,7 @@ function OpinionesTutor() {
 
     } catch (err) {
       console.error('Error al emitir opinión:', err);
-      alert('❌ Error al emitir la opinión. Por favor, intenta de nuevo.');
+      toast.error('❌ Error al emitir la opinión. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -184,9 +185,7 @@ function OpinionesTutor() {
                     <div className="info-item">
                       <strong>Estudiante:</strong> {publicacion.student_name || 'No especificado'}
                     </div>
-                    <div className="info-item">
-                      <strong>Matrícula:</strong> {publicacion.student_matricula || 'No especificada'}
-                    </div>
+                    {/* Matrícula removida; campo no existe */}
                     <div className="info-item">
                       <strong>Fecha:</strong> {publicacion.fecha_publicacion || publicacion.publication_date || 'No especificada'}
                     </div>
@@ -304,9 +303,7 @@ function OpinionesTutor() {
                   <div className="info-item">
                     <strong>Estudiante:</strong> {publicacionSeleccionada.student_name}
                   </div>
-                  <div className="info-item">
-                    <strong>Matrícula:</strong> {publicacionSeleccionada.student_matricula}
-                  </div>
+                  {/* Matrícula removida; campo no existe */}
                   <div className="info-item">
                     <strong>Nivel:</strong> Nivel {publicacionSeleccionada.nivel}
                   </div>

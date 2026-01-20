@@ -6,7 +6,7 @@ from .models import ECERequest, SystemLog, SystemConfiguration
 class ECERequestAdmin(admin.ModelAdmin):
     list_display = ('student', 'status', 'created_at', 'review_date')
     list_filter = ('status', 'created_at', 'review_date')
-    search_fields = ('student__username', 'student__matricula', 'description')
+    search_fields = ('student__username', 'description')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
 

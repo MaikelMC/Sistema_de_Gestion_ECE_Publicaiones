@@ -13,6 +13,11 @@ export const validators = {
     // local part allows letters, numbers and common punctuation
     return /^[A-Za-z0-9._%+-]+@(uci\.cu|estudiantes\.uci\.cu)$/i.test(value.trim());
   },
+  isUsername: (value) => {
+    if (value == null) return false;
+    // Allow letters, numbers, dot, underscore and hyphen, 3-30 chars
+    return /^[A-Za-z0-9._-]{3,30}$/.test(value.trim());
+  },
   minLength: (value, len) => {
     if (value == null) return false;
     return value.trim().length >= len;
@@ -40,15 +45,23 @@ export function validateProfile(fields) {
   }
 
   if ('telefono' in fields) {
-    if (fields.telefono && !validators.isNumeric(fields.telefono)) {
-      errors.telefono = 'El teléfono solo debe contener números, espacios o símbolos +()-.';
+    if (fields.telefono) {
+      if (!validators.isNumeric(fields.telefono)) {
+        errors.telefono = 'El teléfono solo debe contener números, espacios o símbolos +()-.';
+      } else if (!validators.maxLength(fields.telefono, 8)) {
+        errors.telefono = 'El teléfono no puede tener más de 8 caracteres.';
+      }
     }
   }
 
   // soportar variantes en inglés/otros componentes
   if ('phone_number' in fields) {
-    if (fields.phone_number && !validators.isNumeric(fields.phone_number)) {
-      errors.phone_number = 'El teléfono solo debe contener números, espacios o símbolos +()-.';
+    if (fields.phone_number) {
+      if (!validators.isNumeric(fields.phone_number)) {
+        errors.phone_number = 'El teléfono solo debe contener números, espacios o símbolos +()-.';
+      } else if (!validators.maxLength(fields.phone_number, 8)) {
+        errors.phone_number = 'El teléfono no puede tener más de 8 caracteres.';
+      }
     }
   }
 
@@ -61,6 +74,12 @@ export function validateProfile(fields) {
   if ('last_name' in fields) {
     if (fields.last_name && !validators.isAlpha(fields.last_name)) {
       errors.last_name = 'El apellido solo debe contener letras y espacios.';
+    }
+  }
+
+  if ('username' in fields) {
+    if (fields.username && !validators.isUsername(fields.username)) {
+      errors.username = 'El nombre de usuario debe tener 3-30 caracteres; solo letras, números, ., _ y -.';
     }
   }
 

@@ -325,11 +325,7 @@
   font-size: 1rem;
 }
 
-.profile-matricula {
-  color: #666;
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-}
+/* profile-matricula removed - field not used */
 
 /* Sin datos */
 .no-data-stats {

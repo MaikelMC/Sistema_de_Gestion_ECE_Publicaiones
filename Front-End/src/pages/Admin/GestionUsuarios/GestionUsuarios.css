@@ -183,8 +183,4 @@
   color: var(--color-text);
 }
 
-.user-matricula {
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 0.15rem;
-}
+.user-matricula { /* removed - field not used */ }

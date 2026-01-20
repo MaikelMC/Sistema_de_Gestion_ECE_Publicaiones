@@ -1,8 +1,9 @@
 // Perfil.jsx - COMPLETO CON TODAS LAS FUNCIONALIDADES
 import './Perfil.css';
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import Footer from '../../../components/footer';
-import { authService } from '../../../services/authService';
+import authService from '../../../services/authService';
 import api from '../../../services/api';
 import { validateProfile } from '../../../utils/validation';
 import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
@@ -13,7 +14,6 @@ function Perfil() {
     first_name: '',
     last_name: '',
     email: '',
-    matricula: '',
     phone_number: '',
     año_academico: ''
   });
@@ -26,44 +26,74 @@ function Perfil() {
     publicacionesEnviadas: 0,
     solicitudesEnviadas: 0,
     solicitudesPendientes: 0,
-    solicitudesAprobadas: 0,
-    solicitudesRechazadas: 0
+    solicitudesAprobadas: 0
   });
 
   // CARGAR DATOS REALES DEL API
   useEffect(() => {
     cargarDatosReales();
+
+    // Listener para actualizar cuando se envía una solicitud
+    const handleSolicitudUpdate = () => {
+      console.log('🔔 Notificación: Solicitud actualizada, recargando estadísticas');
+      cargarDatosReales();
+    };
+
+    window.addEventListener('solicitud_updated', handleSolicitudUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'solicitud_updated') {
+        handleSolicitudUpdate();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('solicitud_updated', handleSolicitudUpdate);
+    };
   }, []);
 
   const cargarDatosReales = async () => {
     try {
       setLoading(true);
+      console.log('📊 Iniciando carga de datos del perfil...');
       
       // Cargar perfil del usuario
       const profile = await authService.getProfile();
+      // Normalizar teléfono: extraer solo los 8 dígitos (sin prefijo)
+      const serverPhone = profile.phone_number || profile.telefono || profile.phone || '';
+      let digits = String(serverPhone || '').replace(/[^0-9]/g, '');
+      if (digits.startsWith('53') && digits.length > 8) {
+        digits = digits.slice(digits.length - 8);
+      } else if (digits.length > 8) {
+        digits = digits.slice(digits.length - 8);
+      }
+
       setUserData({
         username: profile.username,
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         email: profile.email || '',
-        matricula: profile.matricula || '',
-        phone_number: profile.phone_number || '',
+        phone_number: digits || '',
         año_academico: profile.año_academico || '3er Año'
       });
 
       // Cargar estadísticas
-      const stats = await api.get('/auth/profile/stats/');
+      const stats = await api.get('/auth/profile/stats/', { 
+        params: { t: Date.now() }
+      });
+      console.log('📈 Estadísticas obtenidas del API:', stats.data);
+      
       setStatsData({
         publicacionesEnviadas: stats.data.publicaciones_enviadas || 0,
         solicitudesEnviadas: stats.data.solicitudes_enviadas || 0,
         solicitudesPendientes: stats.data.solicitudes_pendientes || 0,
-        solicitudesAprobadas: stats.data.solicitudes_aprobadas || 0,
-        solicitudesRechazadas: stats.data.solicitudes_rechazadas || 0
+        solicitudesAprobadas: stats.data.solicitudes_aprobadas || 0
       });
+      
+      console.log('✅ Datos del perfil actualizados correctamente');
 
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      alert('Error al cargar los datos del perfil');
+      toast.error('Error al cargar los datos del perfil');
     } finally {
       setLoading(false);
     }
@@ -75,12 +105,15 @@ function Perfil() {
     try {
       // validar campos
       const validationErrors = validateProfile({
+        email: userData.email,
         first_name: userData.first_name,
         last_name: userData.last_name,
         phone_number: userData.phone_number
       });
 
       if (Object.keys(validationErrors).length > 0) {
+        // Mostrar sólo la notificación (toast) tras intentar guardar
+        if (validationErrors.phone_number) toast.warning(validationErrors.phone_number);
         setErrors(validationErrors);
         return;
       }
@@ -88,39 +121,60 @@ function Perfil() {
       setLoading(true);
 
       // Actualizar perfil en el backend (mapear phone_number -> telefono)
-      await authService.updateProfile({
-        telefono: userData.phone_number,
+      // Asegurar que enviamos el prefijo +53 seguido de los 8 dígitos
+      const phoneToSend = userData.phone_number
+        ? (String(userData.phone_number).replace(/[^0-9]/g, '').slice(-8))
+        : '';
+      const telefonoPayload = phoneToSend ? `+53 ${phoneToSend}` : '';
+
+      const updated = await authService.updateProfile({
+        email: userData.email,
+        telefono: telefonoPayload,
         año_academico: userData.año_academico,
         first_name: userData.first_name,
         last_name: userData.last_name
       });
 
+      // Debug: mostrar respuesta del servidor tras actualizar
+      console.log('Perfil actualizado - respuesta updateProfile:', updated);
+
       setIsEditing(false);
       setErrors({});
-      // Recargar datos
+      toast.success('✅ Perfil actualizado correctamente');
+      
+      // Recargar datos y loguear lo recibido
+      const profileAfter = await authService.getProfile();
+      console.log('Perfil recargado después de update:', profileAfter);
       await cargarDatosReales();
 
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
-      alert('❌ Error al actualizar el perfil');
+      toast.error('❌ Error al actualizar el perfil');
     } finally {
       setLoading(false);
     }
   };
 
+  const handlePhoneChange = (e) => {
+    let value = String(e.target.value || '');
+    // Extraer solo dígitos y limitar a 8, sin mostrar notificaciones aquí
+    const digits = value.replace(/[^0-9]/g, '').slice(0, 8);
+    setUserData(prev => ({ ...prev, phone_number: digits }));
+  };
+
   // Función para forzar actualización de datos
   const actualizarEstadisticas = async () => {
     await cargarDatosReales();
-    alert('✅ Estadísticas actualizadas');
+    toast.success('✅ Estadísticas actualizadas');
   };
 
-  // Calcular porcentajes para el gráfico de pastel
-  const total = statsData.publicacionesEnviadas + statsData.solicitudesEnviadas + statsData.solicitudesRechazadas;
+  // Calcular total de actividades
+  const total = statsData.publicacionesEnviadas + statsData.solicitudesEnviadas + statsData.solicitudesAprobadas;
   const porcentajes = total > 0 ? {
     publicaciones: (statsData.publicacionesEnviadas / total) * 100,
     solicitudes: (statsData.solicitudesEnviadas / total) * 100,
-    rechazos: (statsData.solicitudesRechazadas / total) * 100
-  } : { publicaciones: 0, solicitudes: 0, rechazos: 0 };
+    aprobadas: (statsData.solicitudesAprobadas / total) * 100
+  } : { publicaciones: 0, solicitudes: 0, aprobadas: 0 };
 
   if (loading && !userData.username) {
     return (
@@ -150,7 +204,7 @@ function Perfil() {
                       ? `${userData.first_name} ${userData.last_name}` 
                       : userData.username}</h2>
                 <p className="profile-role">Estudiante</p>
-                {userData.matricula && <p className="profile-matricula">Matrícula: {userData.matricula}</p>}
+                  {/* matrícula removed - field not used */}
               </div>
             </div>
             <div className="profile-actions">
@@ -215,8 +269,11 @@ function Perfil() {
                   value={userData.username}
                   disabled={true}
                   className="inputr"
-                  title="El nombre de usuario no se puede cambiar"
+                  title="El nombre de usuario no se puede cambiar. Es tu identificador único de login."
                 />
+                <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                  No se puede cambiar. Es tu identificador único de login.
+                </small>
               </div>
 
               <div className="form-group">
@@ -224,10 +281,12 @@ function Perfil() {
                 <input
                   type="email"
                   value={userData.email}
-                  disabled={true}
+                  onChange={(e) => setUserData({...userData, email: e.target.value})}
+                  disabled={!isEditing}
                   className="inputr"
-                  title="El email no se puede cambiar"
+                  placeholder="usuario@uci.cu"
                 />
+                {errors.email && <div className="field-error">{errors.email}</div>}
               </div>
 
               <div className="form-group">
@@ -243,20 +302,24 @@ function Perfil() {
                   <option value="2do Año">2do Año</option>
                   <option value="3er Año">3er Año</option>
                   <option value="4to Año">4to Año</option>
-                  <option value="5to Año">5to Año</option>
                 </select>
               </div>
 
               <div className="form-group">
                 <label>Teléfono</label>
-                <input
-                  type="tel"
-                  value={userData.phone_number}
-                  onChange={(e) => setUserData({...userData, phone_number: e.target.value})}
-                  disabled={!isEditing}
-                  className="inputr"
-                  placeholder="+53 12345678"
-                />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ marginRight: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '4px' }}>+53</span>
+                  <input
+                    type="tel"
+                    value={userData.phone_number || ''}
+                    onChange={(e) => handlePhoneChange(e)}
+                    disabled={!isEditing}
+                    className="inputr"
+                    placeholder="12345678"
+                    maxLength={8}
+                    style={{ flex: 1 }}
+                  />
+                </div>
                 {errors.phone_number && <div className="field-error">{errors.phone_number}</div>}
               </div>
             </div>
@@ -269,137 +332,99 @@ function Perfil() {
           </form>
         </section>
 
-        {/* Gráfico de Pastel con las 3 estadísticas */}
-        <section className="card stats-card">
+        {/* Estadísticas Rediseñadas - Compactas y Profesionales */}
+        <section className="card stats-card" style={{ gridColumn: '1 / -1' }}>
           <div className="stats-header">
-            <h3>📊 Mis Estadísticas</h3>
-            <div className="stats-actions">
-              <span className="last-update">Actualizado: {new Date().toLocaleTimeString()}</span>
-            </div>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', color: 'var(--color-text)', fontWeight: '600' }}>📊 Mi Actividad</h3>
           </div>
           
-          <div className="pie-chart-container">
-            {total === 0 ? (
-              <div className="no-data-stats">
-                <p>📝 Aún no tienes actividades registradas</p>
-                <p className="hint">Envía una solicitud o publica tu primer trabajo</p>
+          {total === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1.5rem 1rem', color: 'var(--color-text-light)' }}>
+              <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>📝 Aún no tienes actividades registradas</p>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button 
                   className="btn-quick-nav"
                   onClick={() => window.location.href = '/solicitud'}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                 >
-                  📝 Ir a Solicitud
+                  📝 Nueva Solicitud
                 </button>
                 <button 
                   className="btn-quick-nav"
                   onClick={() => window.location.href = '/publicaciones'}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                 >
-                  📄 Ir a Publicaciones
+                  📄 Nueva Publicación
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="pie-chart">
-                  {/* Segmento de Publicaciones Enviadas */}
-                  <div 
-                    className="pie-segment publications"
-                    style={{ 
-                      '--percentage': porcentajes.publicaciones,
-                      '--color': '#3b82f6'
-                    }}
-                  ></div>
-                  
-                  {/* Segmento de Solicitudes Enviadas */}
-                  <div 
-                    className="pie-segment requests"
-                    style={{ 
-                      '--percentage': porcentajes.solicitudes,
-                      '--color': '#10b981',
-                      '--offset': porcentajes.publicaciones
-                    }}
-                  ></div>
-                  
-                  {/* Segmento de Rechazos */}
-                  <div 
-                    className="pie-segment rejected"
-                    style={{ 
-                      '--percentage': porcentajes.rechazos,
-                      '--color': '#ef4444',
-                      '--offset': porcentajes.publicaciones + porcentajes.solicitudes
-                    }}
-                  ></div>
-                  
-                  <div className="pie-center">
-                    <span className="pie-total">{total}</span>
-                    <span className="pie-label">Total</span>
-                  </div>
-                </div>
-                
-                <div className="pie-legend">
-                  <div className="legend-item">
-                    <span className="legend-color publications"></span>
-                    <span>
-                      Publicaciones Enviadas 
-                      <strong> ({statsData.publicacionesEnviadas})</strong>
-                    </span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color requests"></span>
-                    <span>
-                      Solicitudes Enviadas 
-                      <strong> ({statsData.solicitudesEnviadas})</strong>
-                    </span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color rejected"></span>
-                    <span>
-                      Solicitudes Rechazadas 
-                      <strong> ({statsData.solicitudesRechazadas})</strong>
-                    </span>
-                  </div>
-                </div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+              {/* Tarjeta Principal - Total */}
+              <div style={{
+                background: `linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)`,
+                borderRadius: 'var(--border-radius)',
+                padding: '1rem',
+                color: 'white',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'transform 0.2s ease'
+              }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{total}</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Actividades</div>
+              </div>
 
-                {/* Resumen numérico */}
-                <div className="stats-summary">
-                  <div className="summary-item">
-                    <span className="summary-number">{statsData.publicacionesEnviadas}</span>
-                    <span className="summary-label">Publicación{statsData.publicacionesEnviadas !== 1 ? 'es' : ''}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-number">{statsData.solicitudesEnviadas}</span>
-                    <span className="summary-label">Solicitud{statsData.solicitudesEnviadas !== 1 ? 'es' : ''}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-number">{statsData.solicitudesRechazadas}</span>
-                    <span className="summary-label">Rechazada{statsData.solicitudesRechazadas !== 1 ? 's' : ''}</span>
-                  </div>
+              {/* Publicaciones */}
+              <div style={{
+                background: `linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)`,
+                borderRadius: 'var(--border-radius)',
+                padding: '1rem',
+                color: 'white',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'transform 0.2s ease'
+              }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
+                  {statsData.publicacionesEnviadas}
                 </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Publicacione{statsData.publicacionesEnviadas !== 1 ? 's' : ''}</div>
+              </div>
 
-                {/* Detalle adicional */}
-                {statsData.solicitudesRechazadas > 0 && (
-                  <div className="rechazos-detalle">
-                    <h4>📋 Estado de Solicitudes</h4>
-                    <div className="stats-detail">
-                      <div className="detail-item">
-                        <span className="detail-icon">✅</span>
-                        <span className="detail-label">Aprobadas:</span>
-                        <span className="detail-value">{statsData.solicitudesAprobadas}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-icon">⏳</span>
-                        <span className="detail-label">Pendientes:</span>
-                        <span className="detail-value">{statsData.solicitudesPendientes}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-icon">❌</span>
-                        <span className="detail-label">Rechazadas:</span>
-                        <span className="detail-value">{statsData.solicitudesRechazadas}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              {/* Solicitudes */}
+              <div style={{
+                background: `linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)`,
+                borderRadius: 'var(--border-radius)',
+                padding: '1rem',
+                color: 'white',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'transform 0.2s ease'
+              }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
+                  {statsData.solicitudesEnviadas}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Solicitudes{statsData.solicitudesEnviadas !== 1 ? 's' : ''}</div>
+              </div>
+
+              {/* Estado Solicitudes - Fila Inferior */}
+              <div style={{
+                background: `linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)`,
+                borderRadius: 'var(--border-radius)',
+                padding: '1rem',
+                color: 'white',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'transform 0.2s ease'
+              }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
+                  {statsData.solicitudesAprobadas}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>✅ Aprobadas</div>
+              </div>
+
+              {/* Mostrar solo los estados relevantes: Enviada y Aprobada */}
+            </div>
+          )}
         </section>
       </div>
       

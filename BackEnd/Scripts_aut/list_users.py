@@ -21,7 +21,6 @@ else:
         print(f"Role:       {u.role}")
         print(f"Email:      {u.email}")
         print(f"Nombre:     {u.first_name} {u.last_name}")
-        print(f"Matrícula:  {u.matricula or 'N/A'}")
         print(f"Carrera:    {u.carrera or 'N/A'}")
         print(f"Activo:     {u.is_active}")
         print(f"Superuser:  {u.is_superuser}")

@@ -81,6 +81,14 @@
   font-weight: 500;
 }
 
+.info-value.file-name {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  word-spacing: 2px;
+  max-width: 100%;
+}
+
 /* Acciones y estados */
 .solicitud-actions {
   border-top: 1px solid rgba(255, 255, 255, 0.2);

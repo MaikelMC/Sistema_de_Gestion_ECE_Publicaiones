@@ -8,7 +8,6 @@ class PublicationSerializer(serializers.ModelSerializer):
     Serializer principal para publicaciones
     """
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
-    student_matricula = serializers.CharField(source='student.matricula', read_only=True)
     tutor_name = serializers.CharField(source='tutor.get_full_name', read_only=True, allow_null=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.get_full_name', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -28,7 +27,7 @@ class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
         fields = [
-            'id', 'student', 'student_name', 'student_matricula', 'tutor', 'tutor_name',
+            'id', 'student', 'student_name', 'tutor', 'tutor_name',
             'title', 'authors', 'publication_date', 'journal', 'volume', 'pages',
             'doi', 'abstract', 'file', 'file_url', 'nivel', 'nivel_display',
             'status', 'status_display', 'reviewed_by', 'reviewed_by_name',
@@ -66,7 +65,7 @@ class PublicationCreateSerializer(serializers.ModelSerializer):
         model = Publication
         fields = [
             'titulo', 'autores', 'fecha_publicacion', 'revista', 'volumen',
-            'paginas', 'doi', 'resumen', 'archivo', 'nivel',
+            'paginas', 'doi', 'resumen', 'archivo', 'nivel', 'tutor',
             # Campos originales para compatibilidad
             'title', 'authors', 'publication_date', 'journal', 'volume',
             'pages', 'abstract', 'file'
@@ -81,6 +80,7 @@ class PublicationCreateSerializer(serializers.ModelSerializer):
             'abstract': {'write_only': True, 'required': False},
             'file': {'write_only': True, 'required': False},
             'doi': {'required': False, 'allow_blank': True},
+            'tutor': {'required': False, 'allow_null': True},
         }
     
     def validate(self, attrs):
@@ -99,6 +99,20 @@ class PublicationCreateSerializer(serializers.ModelSerializer):
         if 'journal' not in attrs or not attrs.get('journal'):
             attrs['journal'] = ''
         
+        # Validar tutor si se proporciona
+        if 'tutor' in attrs and attrs['tutor'] is not None:
+            from authentication.models import User
+            tutor = attrs['tutor']
+            if not isinstance(tutor, User):
+                # Si es un ID, intentar obtener el usuario
+                try:
+                    tutor = User.objects.get(id=tutor, role='tutor', activo=True)
+                    attrs['tutor'] = tutor
+                except User.DoesNotExist:
+                    raise serializers.ValidationError({"tutor": "Tutor no válido o inactivo."})
+            elif tutor.role != 'tutor' or not tutor.activo:
+                raise serializers.ValidationError({"tutor": "El usuario seleccionado no es un tutor activo."})
+        
         return attrs
     
     def create(self, validated_data):
@@ -112,6 +126,32 @@ class PublicationCreateSerializer(serializers.ModelSerializer):
             validated_data['journal'] = ''
         
         return super().create(validated_data)
+    
+    def validate_volumen(self, value):
+        """Validar que volumen solo contenga números"""
+        if value and value.strip():
+            # Permitir solo números (pueden tener espacios)
+            import re
+            if not re.match(r'^\d+$', value.strip()):
+                raise serializers.ValidationError("El volumen debe contener solo números.")
+        return value
+    
+    def validate_volume(self, value):
+        """Validar campo 'volume' (mismo que 'volumen')"""
+        return self.validate_volumen(value)
+    
+    def validate_paginas(self, value):
+        """Validar que páginas solo contenga números o rangos (ej: 123-135)"""
+        if value and value.strip():
+            import re
+            # Permitir números simples o rangos (ej: 123 o 123-135)
+            if not re.match(r'^\d+(-\d+)?$', value.strip()):
+                raise serializers.ValidationError("Las páginas deben ser números o un rango (ej: 123-135).")
+        return value
+    
+    def validate_pages(self, value):
+        """Validar campo 'pages' (mismo que 'paginas')"""
+        return self.validate_paginas(value)
     
     def validate_archivo(self, value):
         if value:
@@ -139,8 +179,24 @@ class PublicationUpdateSerializer(serializers.ModelSerializer):
         model = Publication
         fields = [
             'title', 'authors', 'publication_date', 'journal', 'volume',
-            'pages', 'doi', 'abstract', 'file', 'nivel', 'status'
+            'pages', 'doi', 'abstract', 'file', 'nivel', 'status', 'tutor'
         ]
+    
+    def validate_volume(self, value):
+        """Validar que volumen solo contenga números"""
+        if value and value.strip():
+            import re
+            if not re.match(r'^\d+$', value.strip()):
+                raise serializers.ValidationError("El volumen debe contener solo números.")
+        return value
+    
+    def validate_pages(self, value):
+        """Validar que páginas solo contenga números o rangos (ej: 123-135)"""
+        if value and value.strip():
+            import re
+            if not re.match(r'^\d+(-\d+)?$', value.strip()):
+                raise serializers.ValidationError("Las páginas deben ser números o un rango (ej: 123-135).")
+        return value
     
     def validate_status(self, value):
         # Solo el estudiante puede cambiar a 'pending' para enviar a revisión
@@ -199,7 +255,7 @@ class TutorStudentSerializer(serializers.ModelSerializer):
     """
     tutor_name = serializers.CharField(source='tutor.get_full_name', read_only=True)
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
-    student_matricula = serializers.CharField(source='student.matricula', read_only=True)
+    student_email = serializers.SerializerMethodField(read_only=True)
     student_carrera = serializers.CharField(source='student.carrera', read_only=True)
     pending_publications = serializers.SerializerMethodField()
     
@@ -207,13 +263,27 @@ class TutorStudentSerializer(serializers.ModelSerializer):
         model = TutorStudent
         fields = [
             'id', 'tutor', 'tutor_name', 'student', 'student_name',
-            'student_matricula', 'student_carrera', 'assigned_date',
+            'student_email', 'student_carrera', 'assigned_date',
             'is_active', 'progress', 'pending_publications', 'created_at'
         ]
         read_only_fields = ['id', 'assigned_date', 'created_at']
     
     def get_pending_publications(self, obj):
         return obj.student.publications.filter(status='pending').count()
+
+    def get_student_email(self, obj):
+        # Manejar casos donde `student` puede ser un objeto, None o un ID
+        try:
+            student = obj.student
+            # Si es un objeto con atributo email
+            if hasattr(student, 'email'):
+                return student.email or ''
+            # Si el serializer/proveedor ya incluyó student_email como campo en la instancia
+            if hasattr(obj, 'student_email') and obj.student_email:
+                return obj.student_email
+        except Exception:
+            pass
+        return ''
 
 
 class PublicationDetailSerializer(serializers.ModelSerializer):

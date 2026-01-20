@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import publicationService from '../../../services/publicationService';
 import authService from '../../../services/authService';
+import showConfirm from '../../../utils/showConfirm';
 import { handleApiError, formatDateShort, getStatusLabel, getStatusColor, validateFile } from '../../../utils/helpers';
 import Footer from '../../../components/footer';
 
@@ -18,10 +19,13 @@ function Publicaciones() {
     doi: '',
     archivo: null,
     resumen: '',
-    nivel: ''
+    nivel: '',
+    tutor: '',
+    tutor_text: ''
   });
 
   const [publicaciones, setPublicaciones] = useState([]);
+  const [tutores, setTutores] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('form'); // 'form' | 'details'
@@ -39,6 +43,7 @@ function Publicaciones() {
       return;
     }
     cargarPublicaciones();
+    cargarTutores();
   }, []);
 
   // Evitar scroll doble cuando el modal está abierto
@@ -72,8 +77,61 @@ function Publicaciones() {
     }
   };
 
+  const cargarTutores = async () => {
+    try {
+      const response = await authService.getTutores();
+      setTutores(response || []);
+    } catch (error) {
+      console.error('Error al cargar tutores:', error);
+      // No mostrar error al usuario, solo log
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
+    
+    // Manejo especial para el campo de tutor con datalist (escribible + seleccionable)
+    if (name === 'tutor_input') {
+      // Si el usuario seleccionó una opción del datalist el valor tendrá el formato "<id> - <Nombre>"
+      const m = String(value).match(/^(\d+)\s*-\s*(.+)$/);
+      if (m) {
+        const id = m[1];
+        const display = m[2];
+        setPublicacionData(prev => ({ ...prev, tutor: id, tutor_text: display }));
+      } else {
+        // Intentar encontrar por nombre (coincidencia exacta, case-insensitive)
+        const found = tutores.find(t => {
+          const display = t.get_full_name || t.full_name || `${t.first_name} ${t.last_name}`.trim() || t.username;
+          return display.toLowerCase() === String(value).toLowerCase();
+        });
+        if (found) {
+          const display = found.get_full_name || found.full_name || `${found.first_name} ${found.last_name}`.trim() || found.username;
+          setPublicacionData(prev => ({ ...prev, tutor: found.id, tutor_text: display }));
+        } else {
+          // Usuario está escribiendo un nombre libre; no asignamos id
+          setPublicacionData(prev => ({ ...prev, tutor: '', tutor_text: value }));
+        }
+      }
+      return;
+    }
+
+    // Validación especial para campos numéricos
+    if (name === 'volumen' && value) {
+      // Solo permitir números en volumen
+      if (!/^\d*$/.test(value)) {
+        toast.warning('El volumen debe contener solo números');
+        return;
+      }
+    }
+    
+    if (name === 'paginas' && value) {
+      // Solo permitir números (ej: 123)
+      if (!/^\d*$/.test(value)) {
+        toast.warning('Las páginas deben contener solo números');
+        return;
+      }
+    }
+    
     setPublicacionData(prev => ({
       ...prev,
       [name]: files ? files[0] : value
@@ -143,6 +201,7 @@ function Publicaciones() {
         if (publicacionData.doi) formData.append('doi', publicacionData.doi);
         if (publicacionData.resumen) formData.append('abstract', publicacionData.resumen);
         if (publicacionData.nivel) formData.append('nivel', publicacionData.nivel);
+        if (publicacionData.tutor) formData.append('tutor', publicacionData.tutor);
         // Solo agregar archivo si es un archivo nuevo (File), no una URL string
         if (publicacionData.archivo && typeof publicacionData.archivo !== 'string') {
           formData.append('file', publicacionData.archivo);
@@ -158,6 +217,7 @@ function Publicaciones() {
         if (publicacionData.paginas) formData.append('paginas', publicacionData.paginas);
         if (publicacionData.doi) formData.append('doi', publicacionData.doi);
         if (publicacionData.resumen) formData.append('resumen', publicacionData.resumen);
+        if (publicacionData.tutor) formData.append('tutor', publicacionData.tutor);
         if (publicacionData.archivo && typeof publicacionData.archivo !== 'string') {
           formData.append('archivo', publicacionData.archivo);
         }
@@ -191,21 +251,19 @@ function Publicaciones() {
 
   // FUNCIÓN PARA ELIMINAR PUBLICACIÓN
   const handleEliminar = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta publicación?')) {
-      try {
-        await publicationService.delete(id);
-        toast.success('🗑️ Publicación eliminada correctamente');
-        
-        // Si estamos editando esta publicación, cancelar edición
-        if (editandoId === id) {
-          resetForm();
-        }
-        
-        // Recargar lista
-        await cargarPublicaciones();
-      } catch (error) {
-        handleApiError(error);
+    const ok = await showConfirm({ message: '¿Estás seguro de que quieres eliminar esta publicación?' });
+    if (!ok) return;
+    try {
+      await publicationService.delete(id);
+      toast.success('🗑️ Publicación eliminada correctamente');
+      // Si estamos editando esta publicación, cancelar edición
+      if (editandoId === id) {
+        resetForm();
       }
+      // Recargar lista
+      await cargarPublicaciones();
+    } catch (error) {
+      handleApiError(error);
     }
   };
   // FUNCIÓN PARA EDITAR PUBLICACIÓN
@@ -220,6 +278,8 @@ function Publicaciones() {
       doi: publicacion.doi || '',
       resumen: publicacion.resumen || '',
       nivel: publicacion.nivel || '',
+      tutor: publicacion.tutor || '',
+      tutor_text: publicacion.tutor_name || '',
       archivo: publicacion.archivo || null
     });
     setEditandoId(publicacion.id);
@@ -254,7 +314,9 @@ function Publicaciones() {
       doi: '',
       archivo: null,
       resumen: '',
-      nivel: ''
+      nivel: '',
+      tutor: '',
+      tutor_text: ''
     });
     setEditandoId(null);
     
@@ -263,18 +325,7 @@ function Publicaciones() {
     if (fileInput) fileInput.value = '';
   };
 
-  // Función para enviar a revisión
-  const enviarARevision = async (id) => {
-    if (window.confirm('¿Estás seguro de enviar esta publicación a revisión?')) {
-      try {
-        await publicationService.submitForReview(id);
-        toast.success('✅ Publicación enviada a revisión correctamente');
-        await cargarPublicaciones();
-      } catch (error) {
-        handleApiError(error);
-      }
-    }
-  };
+  // Nota: Envío a revisión deshabilitado — la aplicación no modificará el estado desde el cliente.
 
   return (
     <div className="dash-page">
@@ -289,17 +340,8 @@ function Publicaciones() {
           <button
             className="btn-primary"
             onClick={() => { resetForm(); setModalMode('form'); setShowModal(true); }}
-            style={{ marginRight: '0.5rem' }}
           >
             ➕ Agregar publicación
-          </button>
-          <button
-            className="btn-refresh"
-            onClick={cargarPublicaciones}
-            title="Actualizar lista"
-            disabled={loadingList}
-          >
-            {loadingList ? '⏳' : '🔄'}
           </button>
         </div>
       </div>
@@ -373,6 +415,28 @@ function Publicaciones() {
               </div>
 
               <div className="form-group">
+                <label htmlFor="tutor_input">Tutor (Opcional)</label>
+                <input
+                  list="tutores_list"
+                  id="tutor_input"
+                  name="tutor_input"
+                  value={publicacionData.tutor_text || ''}
+                  onChange={handleInputChange}
+                  className="inputr"
+                  placeholder="Escribe o selecciona un tutor"
+                />
+                <datalist id="tutores_list">
+                  {tutores.map(tutor => {
+                    const display = tutor.get_full_name || tutor.full_name || `${tutor.first_name} ${tutor.last_name}`.trim() || tutor.username;
+                    return (
+                      <option key={tutor.id} value={`${tutor.id} - ${display}`} />
+                    );
+                  })}
+                </datalist>
+                <small>Escribe para buscar o selecciona un tutor registrado</small>
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="fechaPublicacion">Fecha de Publicación</label>
                 <input
                   type="date"
@@ -407,6 +471,8 @@ function Publicaciones() {
                   onChange={handleInputChange}
                   className="inputr"
                   placeholder="Ej: 123-135"
+                  pattern="\d+(-\d+)?"
+                  title="Ingrese números o un rango (ej: 123-135)"
                 />
               </div>
 
@@ -467,25 +533,31 @@ function Publicaciones() {
                   <div>
                     <h3 style={{ marginTop: 0 }}>{selectedPublicacion.titulo}</h3>
                     <div className="publicacion-meta" style={{ marginBottom: '0.5rem' }}>
-                      <span className={`estado-badge estado-${selectedPublicacion.status || 'en_proceso'}`} style={{ backgroundColor: getStatusColor(selectedPublicacion.status) }}>{getStatusLabel(selectedPublicacion.status)}</span>
+                      <span className={`estado-badge publicado-badge`}>Publicado</span>
                       <span className="nivel-badge">Nivel {selectedPublicacion.nivel}</span>
                       <span className="fecha">{formatDateShort(selectedPublicacion.created_at)}</span>
                     </div>
                     <p><strong>Estudiante:</strong> {selectedPublicacion.student_name || 'No especificado'}</p>
-                    <p><strong>Matrícula:</strong> {selectedPublicacion.student_matricula || 'No especificada'}</p>
                     <p><strong>Autores:</strong> {selectedPublicacion.autores}</p>
+                    {selectedPublicacion.tutor_name && <p><strong>Tutor:</strong> {selectedPublicacion.tutor_name}</p>}
                     {selectedPublicacion.revista && <p><strong>Revista:</strong> {selectedPublicacion.revista}</p>}
                     {selectedPublicacion.fecha_publicacion && <p><strong>Fecha de Publicación:</strong> {formatDateShort(selectedPublicacion.fecha_publicacion)}</p>}
                     {selectedPublicacion.volumen && <p><strong>Volumen:</strong> {selectedPublicacion.volumen}</p>}
                     {selectedPublicacion.paginas && <p><strong>Páginas:</strong> {selectedPublicacion.paginas}</p>}
-                    {selectedPublicacion.doi && <p><strong>DOI:</strong> {selectedPublicacion.doi}</p>}
+                    {selectedPublicacion.doi ? (
+                      <p>
+                        <strong>DOI:</strong>{' '}
+                        <a href={`https://doi.org/${selectedPublicacion.doi}`} target="_blank" rel="noopener noreferrer">{selectedPublicacion.doi}</a>
+                      </p>
+                    ) : null}
                     {selectedPublicacion.resumen && <p className="resumen"><strong>Resumen:</strong> {selectedPublicacion.resumen}</p>}
                     {selectedPublicacion.archivo && <p><strong>Archivo:</strong> <a href={selectedPublicacion.archivo} target="_blank" rel="noopener noreferrer">📎 Ver documento</a></p>}
                     <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button className="btn-small btn-editar" onClick={() => { setShowModal(false); handleEditar(selectedPublicacion); }}>
-                        ✏️ Editar
-                      </button>
-                      <button className="btn-small btn-cerrar" onClick={() => { setShowModal(false); setSelectedPublicacion(null); setModalMode('form'); }}>
+                      <button
+                        className="btn-primary btn-cerrar"
+                        onClick={() => { setShowModal(false); setSelectedPublicacion(null); setModalMode('form'); }}
+                        title="Cerrar"
+                      >
                         Cerrar
                       </button>
                     </div>
@@ -500,79 +572,77 @@ function Publicaciones() {
       )}
 
       {/* Lista de Publicaciones Existentes */}
-      <section className="card">
-        <div className="publicaciones-header">
-          <h2>📚 Mis Publicaciones Registradas</h2>
-          <div className="publicaciones-info">
-            <span>Total: {publicaciones.length}</span>
-          </div>
+      {loadingList ? (
+        <div className="no-data">
+          <p>⏳ Cargando publicaciones...</p>
         </div>
-
-        {loadingList ? (
-          <div className="no-data">
-            <p>⏳ Cargando publicaciones...</p>
-          </div>
-        ) : publicaciones.length === 0 ? (
-          <div className="no-data">
-            <p>📝 Aún no tienes publicaciones registradas</p>
-            <p className="hint">Haz clic en "Agregar publicación" para crear tu primera publicación</p>
-          </div>
-        ) : (
+      ) : publicaciones.length === 0 ? (
+        <div className="no-data">
+          <p>📝 Aún no tienes publicaciones registradas</p>
+          <p className="hint">Haz clic en "Agregar publicación" para crear tu primera publicación</p>
+        </div>
+      ) : (
+        <div className="publicaciones-list-container">
           <div className="publicaciones-list">
             {publicaciones.map((pub) => (
-              <div key={pub.id} className={`publicacion-item ${editandoId === pub.id ? 'editando' : ''}`}>
-                <div className="publicacion-header">
-                  <div className="publicacion-info">
-                    <h3>{pub.titulo}</h3>
-                    <div className="publicacion-meta">
-                      <span 
-                        className={`estado-badge estado-${pub.status || 'en_proceso'}`}
-                        style={{ backgroundColor: getStatusColor(pub.status) }}
-                      >
-                        {getStatusLabel(pub.status)}
-                      </span>
-                      <span className="nivel-badge">Nivel {pub.nivel}</span>
-                      <span className="fecha">{formatDateShort(pub.created_at)}</span>
-                    </div>
-                  </div>
+              <div key={pub.id} className={`publicacion-card ${editandoId === pub.id ? 'editando' : ''}`}>
+                <div className="card-header-pub">
+                  <h3 className="card-title">{pub.titulo}</h3>
+                  <span className={`estado-badge publicado-badge`}>Publicado</span>
                 </div>
-                <div className="publicacion-actions">
+                
+                <div className="card-body-pub">
+                  <div className="meta-row">
+                    <span className="meta-item"><strong>Nivel:</strong> {pub.nivel}</span>
+                    <span className="meta-item"><strong>Fecha:</strong> {formatDateShort(pub.created_at)}</span>
+                  </div>
+                  
+                  {pub.autores && (
+                    <div className="meta-row">
+                      <span className="meta-item"><strong>Autores:</strong> {pub.autores}</span>
+                    </div>
+                  )}
+                  
+                  {pub.revista && (
+                    <div className="meta-row">
+                      <span className="meta-item"><strong>Revista:</strong> {pub.revista}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="card-actions-pub">
                   <button 
-                    className="btn-small btn-editar"
+                    className="btn-card-action btn-edit"
                     onClick={() => handleEditar(pub)}
-                    disabled={editandoId === pub.id || pub.status === 'pending'}
+                    disabled={editandoId === pub.id}
+                    title="Editar publicación"
                   >
-                    {editandoId === pub.id ? '✏️ Editando...' : '✏️ Editar'}
+                    ✏️ Editar
                   </button>
                   <button
-                    className="btn-small btn-detalles"
+                    className="btn-card-action btn-details"
                     onClick={() => handleVerDetalles(pub)}
+                    title="Ver detalles"
                   >
                     🔎 Detalles
                   </button>
+                  {/* Envío a revisión deshabilitado: el estado no se modifica desde el cliente */}
                   <button 
-                    className="btn-small btn-danger"
+                    className="btn-card-action btn-delete"
                     onClick={() => handleEliminar(pub.id)}
-                    disabled={editandoId === pub.id || pub.status === 'pending'}
+                    disabled={editandoId === pub.id}
+                    title="Eliminar publicación"
                   >
                     🗑️ Eliminar
                   </button>
-                  
-                  {/* Botón para enviar a revisión */}
-                  {pub.status === 'en_proceso' && (
-                    <button 
-                      className="btn-small btn-success"
-                      onClick={() => enviarARevision(pub.id)}
-                    >
-                      📤 Enviar a Revisión
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </section>
+        </div>
+      )}
+      
+      <Footer/>
     </div>
   );
 }

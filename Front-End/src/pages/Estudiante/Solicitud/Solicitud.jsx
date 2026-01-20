@@ -1,9 +1,10 @@
 // Solicitud.jsx - INTEGRADO CON BACKEND
 import './Solicitud.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../../services/api';
 import { handleApiError } from '../../../utils/helpers';
+import showConfirm from '../../../utils/showConfirm';
 
 function Solicitud() {
   const [solicitud, setSolicitud] = useState(null);
@@ -17,26 +18,55 @@ function Solicitud() {
     cargarSolicitud();
   }, []);
 
+  // Monitorear cambios en el estado de solicitud
+  useEffect(() => {
+    if (solicitud) {
+      console.log('✅ Estado solicitud actualizado:', {
+        id: solicitud.id,
+        status: solicitud.status,
+        file_url: solicitud.file_url?.split('/').pop()
+      });
+    } else {
+      console.log('✅ No hay solicitud activa');
+    }
+  }, [solicitud]);
+
   const cargarSolicitud = async () => {
     try {
       setLoading(true);
+      
       // Obtener solo las solicitudes del usuario autenticado
-      const response = await api.get('/requests/my_requests/');
+      const response = await api.get('/requests/my_requests/', {
+        params: { t: Date.now() }
+      });
+      console.log(`📋 Solicitudes obtenidas: ${response.data?.length} total`);
       
       // Si tiene solicitudes, mostrar la más reciente que esté activa
       if (response.data && response.data.length > 0) {
-        // Buscar solicitud activa (en_proceso, pendiente o aprobada)
-        const solicitudActiva = response.data.find(s => 
-          s.status === 'en_proceso' || s.status === 'pendiente' || s.status === 'aprobada'
-        );
+        // Filtrar solicitudes activas (enviada, en_proceso, aprobada o cancelada)
+        const solicitudesActivas = response.data.filter(s => {
+          return s.status === 'enviada' || s.status === 'en_proceso' || s.status === 'aprobada' || s.status === 'cancelada';
+        });
         
-        if (solicitudActiva) {
+        if (solicitudesActivas.length > 0) {
+          // Obtener la más reciente
+          const solicitudActiva = solicitudesActivas.sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          )[0];
+          
+          console.log(`✅ Solicitud activa encontrada: ID ${solicitudActiva.id}, Status: ${solicitudActiva.status}`);
           setSolicitud(solicitudActiva);
           setDescripcion(solicitudActiva.description || '');
+        } else {
+          console.log('⚠️ No hay solicitudes activas');
+          setSolicitud(null);
         }
+      } else {
+        console.log('⚠️ Usuario sin solicitudes');
+        setSolicitud(null);
       }
     } catch (error) {
-      console.error('Error al cargar solicitud:', error);
+      console.error('❌ Error al cargar solicitud:', error.message);
       handleApiError(error);
     } finally {
       setLoading(false);
@@ -51,14 +81,14 @@ function Solicitud() {
       const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
       
       if (!tiposPermitidos.includes(extension)) {
-        alert('Solo se permiten archivos PDF, DOC o DOCX');
+        toast.warning('Solo se permiten archivos PDF, DOC o DOCX');
         e.target.value = '';
         return;
       }
 
       // Validar tamaño (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo no puede ser mayor a 10MB');
+        toast.warning('El archivo no puede ser mayor a 10MB');
         e.target.value = '';
         return;
       }
@@ -69,14 +99,15 @@ function Solicitud() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    console.log('🚀 Enviando solicitud...');
     
     if (!archivo) {
       toast.error('Por favor selecciona un archivo');
       return;
     }
 
-    if (solicitud && (solicitud.status === 'en_proceso' || solicitud.status === 'pendiente')) {
-      toast.warning('Ya tienes una solicitud en proceso. Espera a que sea revisada.');
+    if (solicitud && (solicitud.status === 'enviada' || solicitud.status === 'en_proceso')) {
+      toast.warning('Ya tienes una solicitud enviada. Espera a que sea revisada.');
       return;
     }
 
@@ -102,18 +133,29 @@ function Solicitud() {
         }
       });
 
+      console.log('✅ POST completado, recargando datos...');
+      
       toast.success('✅ Solicitud enviada correctamente');
       
-      // Recargar solicitud
+      // Pequeño delay para asegurar que el backend procese
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Recargar solicitud para obtener los datos completos
       await cargarSolicitud();
+      
+      // Notificar a otros componentes que la solicitud ha sido actualizada
+      localStorage.setItem('solicitud_updated', Date.now().toString());
+      window.dispatchEvent(new Event('solicitud_updated'));
+      console.log('✅ Evento de sincronización disparado');
       
       // Limpiar formulario
       setArchivo(null);
+      setDescripcion('');
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
       
     } catch (error) {
-      console.error('Error al enviar solicitud:', error);
+      console.error('❌ Error:', error.message);
       handleApiError(error);
     } finally {
       setIsSubmitting(false);
@@ -121,9 +163,8 @@ function Solicitud() {
   };
 
   const handleCancelar = async () => {
-    if (!window.confirm('¿Estás seguro de que quieres cancelar tu solicitud?')) {
-      return;
-    }
+    const confirmado = await showConfirm({ message: '¿Estás seguro de que quieres cancelar tu solicitud?' });
+    if (!confirmado) return;
 
     try {
       // Eliminar solicitud del backend
@@ -133,6 +174,10 @@ function Solicitud() {
       setSolicitud(null);
       setDescripcion('');
       
+      // Notificar a otros componentes que la solicitud ha sido actualizada
+      localStorage.setItem('solicitud_updated', Date.now().toString());
+      window.dispatchEvent(new Event('solicitud_updated'));
+      
     } catch (error) {
       console.error('Error al cancelar solicitud:', error);
       handleApiError(error);
@@ -141,20 +186,20 @@ function Solicitud() {
 
   const getEstadoColor = (status) => {
     switch (status) {
-      case 'en_proceso': return '#f59e0b';
-      case 'pendiente': return '#3b82f6';
-      case 'aprobada': return '#10b981';
-      case 'rechazada': return '#ef4444';
+      case 'enviada': return '#3b82f6';     // Azul cuando está enviada
+      case 'en_proceso': return '#3b82f6';  // Azul cuando está en proceso
+      case 'aprobada': return '#10b981';    // Verde cuando está aprobada
+      case 'cancelada': return '#ef4444';   // Rojo cuando está cancelada
       default: return '#6b7280';
     }
   };
 
   const getEstadoTexto = (status) => {
     switch (status) {
+      case 'enviada': return '📤 Enviada';
       case 'en_proceso': return '🔄 En Proceso';
-      case 'pendiente': return '⏳ Pendiente de Revisión';
       case 'aprobada': return '✅ Aprobada';
-      case 'rechazada': return '❌ Rechazada';
+      case 'cancelada': return '❌ Cancelada';
       default: return status;
     }
   };
@@ -177,14 +222,17 @@ function Solicitud() {
       </header>
 
       {/* Estado de la Solicitud */}
-      <section className="card estado-card">
+      <section className="card estado-card" key={solicitud?.id}>
         <div className="estado-header">
           <h2>Estado de Solicitud ECE</h2>
           <div 
             className="estado-badge"
-            style={{ backgroundColor: getEstadoColor(solicitud?.estado) }}
+            style={{ 
+              backgroundColor: getEstadoColor(solicitud?.status),
+              transition: 'background-color 0.3s ease'
+            }}
           >
-            {getEstadoTexto(solicitud?.estado)}
+            {getEstadoTexto(solicitud?.status)}
           </div>
         </div>
 
@@ -193,7 +241,9 @@ function Solicitud() {
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Archivo:</span>
-                <span className="info-value">{solicitud.nombreArchivo}</span>
+                <span className="info-value file-name">
+                  {solicitud.file_url ? solicitud.file_url.split('/').pop() : 'No disponible'}
+                </span>
               </div>
               <div className="info-item">
                 <span className="info-label">Fecha de envío:</span>
@@ -226,7 +276,7 @@ function Solicitud() {
 
             {/* Acciones según el estado */}
             <div className="solicitud-actions">
-              {(solicitud.status === 'en_proceso' || solicitud.status === 'pendiente') && (
+              {(solicitud.status === 'enviada' || solicitud.status === 'en_proceso') && (
                 <div className="proceso-info">
                   <p>⏳ Tu solicitud está siendo revisada por el comité académico.</p>
                   <p><strong>Tiempo estimado:</strong> 3-5 días hábiles</p>
@@ -252,21 +302,15 @@ function Solicitud() {
                 </div>
               )}
 
-              {solicitud.status === 'rechazada' && (
-                <div className="rechazada-info">
+              {solicitud.status === 'cancelada' && (
+                <div className="cancelada-info">
                   {solicitud.review_comment && (
                     <div className="comentario-revision">
-                      <strong>Motivo del rechazo:</strong>
+                      <strong>Motivo de cancelación:</strong>
                       <p>{solicitud.review_comment}</p>
                     </div>
                   )}
-                  <p>📋 <strong>Motivos comunes de rechazo:</strong></p>
-                  <ul>
-                    <li>Documentación incompleta</li>
-                    <li>No cumple con los requisitos académicos</li>
-                    <li>Formato de archivo incorrecto</li>
-                    <li>Información inconsistente</li>
-                  </ul>
+                  <p>Tu solicitud ha sido cancelada.</p>
                   <button 
                     className="btn-eliminar"
                     onClick={handleCancelar}
@@ -278,7 +322,10 @@ function Solicitud() {
             </div>
           </div>
         ) : (
-          <p className="no-solicitud">Aún no has enviado ninguna solicitud.</p>
+          <div className="no-solicitud">
+            <p>📝 Aún no has enviado ninguna solicitud ECE.</p>
+            <small>Completa el formulario abajo y envía tu solicitud para comenzar.</small>
+          </div>
         )}
       </section>
 
@@ -286,9 +333,9 @@ function Solicitud() {
       <div className={`submission-list card ${solicitud ? 'disabled' : ''}`}>
         <h2>📤 Enviar Nueva Solicitud</h2>
         
-        {solicitud && (solicitud.status === 'en_proceso' || solicitud.status === 'pendiente') ? (
+        {solicitud && (solicitud.status === 'enviada' || solicitud.status === 'en_proceso') ? (
           <div className="mensaje-bloqueo">
-            <p>⏳ Ya tienes una solicitud en proceso de revisión.</p>
+            <p>⏳ Ya tienes una solicitud enviada en revisión.</p>
             <p>No puedes enviar otra solicitud hasta que esta sea revisada.</p>
           </div>
         ) : solicitud && solicitud.status === 'aprobada' ? (

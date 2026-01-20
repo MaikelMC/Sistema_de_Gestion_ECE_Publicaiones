@@ -2,6 +2,8 @@
 import './GestionSolicitud.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { toast } from 'react-toastify';
+import showConfirm from '../../../utils/showConfirm';
 
 function GestionSolicitud() {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -70,12 +72,11 @@ function GestionSolicitud() {
       filtered = filtered.filter(sol => sol.status === filtro);
     }
 
-    // Búsqueda por nombre, matrícula o descripción
+    // Búsqueda por nombre o descripción
     if (busqueda) {
       const searchLower = busqueda.toLowerCase();
       filtered = filtered.filter(sol => 
         (sol.student_name && sol.student_name.toLowerCase().includes(searchLower)) ||
-        (sol.student_matricula && sol.student_matricula.toLowerCase().includes(searchLower)) ||
         (sol.description && sol.description.toLowerCase().includes(searchLower))
       );
     }
@@ -115,8 +116,7 @@ function GestionSolicitud() {
       const mensaje = isApproved
         ? '✅ Solicitud aprobada correctamente'
         : '❌ Solicitud rechazada correctamente';
-      
-      alert(mensaje);
+      if (isApproved) toast.success(mensaje); else toast.error(mensaje);
     } catch (error) {
       console.error('Error al cambiar estado:', error);
       console.error('Detalles del error:', error.response?.data);
@@ -136,7 +136,7 @@ function GestionSolicitud() {
         mensajeError += 'Por favor, intenta nuevamente.';
       }
       
-      alert(mensajeError);
+      toast.error(mensajeError);
     } finally {
       setProcesando(false);
     }
@@ -180,7 +180,7 @@ function GestionSolicitud() {
   };
 
   const descargarArchivo = (nombreArchivo) => {
-    alert(`📥 Descargando archivo: ${nombreArchivo}\n\nEn una implementación real, aquí se descargaría el archivo.`);
+    toast.info(`📥 Descargando archivo: ${nombreArchivo}`);
   };
 
   const solicitudesFiltradas = filtrarSolicitudes();
@@ -212,52 +212,7 @@ function GestionSolicitud() {
         </div>
       )}
 
-      {/* Estadísticas Rápidas */}
-      <div className="stats-cards">
-        <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <div className="stat-info">
-            <span className="stat-number">{solicitudes.length}</span>
-            <span className="stat-label">Total Solicitudes</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🔄</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {solicitudes.filter(s => s.status === 'en_proceso').length}
-            </span>
-            <span className="stat-label">En Proceso</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">⏳</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {solicitudes.filter(s => s.status === 'pendiente').length}
-            </span>
-            <span className="stat-label">Pendientes</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {solicitudes.filter(s => s.status === 'aprobada').length}
-            </span>
-            <span className="stat-label">Aprobadas</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">❌</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {solicitudes.filter(s => s.status === 'rechazada').length}
-            </span>
-            <span className="stat-label">Rechazadas</span>
-          </div>
-        </div>
-      </div>
+      {/* Estadísticas removidas: se muestra solo la lista de solicitudes */}
 
       {/* Filtros y Búsqueda */}
       <div className="filtros-section">
@@ -277,7 +232,7 @@ function GestionSolicitud() {
         <div className="filtros-right">
           <input
             type="text"
-            placeholder="🔍 Buscar por nombre, matrícula o descripción..."
+            placeholder="🔍 Buscar por nombre o descripción..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="busqueda-input"
@@ -303,10 +258,9 @@ function GestionSolicitud() {
               <div className="solicitud-header">
                 <div className="solicitud-info">
                   <h3>{solicitud.student_name}</h3>
-                  <div className="solicitud-meta">
-                    <span className="matricula">🎓 {solicitud.student_matricula}</span>
-                    <span className="fecha">📅 {new Date(solicitud.created_at).toLocaleDateString('es-ES')}</span>
-                  </div>
+                    <div className="solicitud-meta">
+                      <span className="fecha">📅 {new Date(solicitud.created_at).toLocaleDateString('es-ES')}</span>
+                    </div>
                 </div>
                 <div 
                   className="estado-badge"
@@ -365,10 +319,9 @@ function GestionSolicitud() {
                   <>
                     <button 
                       className="btn-aprobar"
-                      onClick={() => {
-                        if (window.confirm(`¿Estás seguro de que deseas aprobar la solicitud de ${solicitud.student_name}?`)) {
-                          cambiarEstadoSolicitud(solicitud.id, 'aprobada');
-                        }
+                      onClick={async () => {
+                        const ok = await showConfirm({ message: `¿Estás seguro de que deseas aprobar la solicitud de ${solicitud.student_name}?` });
+                        if (ok) cambiarEstadoSolicitud(solicitud.id, 'aprobada');
                       }}
                       disabled={procesando}
                     >
@@ -406,9 +359,7 @@ function GestionSolicitud() {
                   <div className="detalle-item">
                     <strong>Estudiante:</strong> {solicitudSeleccionada.student_name}
                   </div>
-                  <div className="detalle-item">
-                    <strong>Matrícula:</strong> {solicitudSeleccionada.student_matricula}
-                  </div>
+                  {/* Matrícula removida; campo no existe */}
                   <div className="detalle-item">
                     <strong>Fecha:</strong> {new Date(solicitudSeleccionada.created_at).toLocaleDateString('es-ES')}
                   </div>
@@ -473,10 +424,9 @@ function GestionSolicitud() {
                 <>
                   <button 
                     className="btn-aprobar"
-                    onClick={() => {
-                      if (window.confirm(`¿Aprobar solicitud de ${solicitudSeleccionada.student_name}?`)) {
-                        cambiarEstadoSolicitud(solicitudSeleccionada.id, 'aprobada');
-                      }
+                    onClick={async () => {
+                      const ok = await showConfirm({ message: `¿Aprobar solicitud de ${solicitudSeleccionada.student_name}?` });
+                      if (ok) cambiarEstadoSolicitud(solicitudSeleccionada.id, 'aprobada');
                     }}
                     disabled={procesando}
                   >
@@ -548,14 +498,15 @@ function GestionSolicitud() {
               <button className="btn-cancelar" onClick={cerrarModal}>
                 Cancelar
               </button>
-              <button 
+                <button 
                 className="btn-confirmar-rechazo"
-                onClick={() => {
+                onClick={async () => {
                   if (!comentario.trim()) {
-                    alert('⚠️ Por favor, agrega un comentario explicando el motivo del rechazo.');
+                    toast.warning('⚠️ Por favor, agrega un comentario explicando el motivo del rechazo.');
                     return;
                   }
-                  if (window.confirm('¿Confirmas el rechazo de esta solicitud?')) {
+                  const ok = await showConfirm({ message: '¿Confirmas el rechazo de esta solicitud?' });
+                  if (ok) {
                     cambiarEstadoSolicitud(solicitudSeleccionada.id, 'rechazada', comentario);
                   }
                 }}

@@ -376,16 +376,21 @@
 }
 
 .btn-cerrar {
-  background: none;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  color: white;
   border: none;
-  font-size: 1.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
   cursor: pointer;
-  color: #6b7280;
-  padding: 0.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
 }
 
 .btn-cerrar:hover {
-  color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
 }
 
 .modal-body {

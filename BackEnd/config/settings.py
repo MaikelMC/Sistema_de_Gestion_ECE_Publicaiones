@@ -218,8 +218,8 @@ REDOC_SETTINGS = {
 
 # JWT Settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
@@ -272,7 +272,3 @@ CACHES = {
 }
 
 # No cachear respuestas de API con datos sensibles
-CACHE_MIDDLEWARE_SECONDS = 0
-ALLOW_ADMIN_IPS = os.getenv('ALLOW_ADMIN_IPS', '127.0.0.1,::1')
-if isinstance(ALLOW_ADMIN_IPS, str):
-    ALLOW_ADMIN_IPS = [ip.strip() for ip in ALLOW_ADMIN_IPS.split(',') if ip.strip()]

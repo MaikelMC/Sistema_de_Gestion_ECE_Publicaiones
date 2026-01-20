@@ -5,6 +5,7 @@ import Footer from '../../../components/footer';
 import authService from '../../../services/authService';
 import { validateProfile } from '../../../utils/validation';
 import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
+import { toast } from 'react-toastify';
 
 function PerfilTutor() {
   const [userData, setUserData] = useState({
@@ -67,11 +68,15 @@ function PerfilTutor() {
         const first_name = parts.shift() || '';
         const last_name = parts.join(' ') || '';
 
+        // Preparar telefono con prefijo +53 si no viene
+        const telDigits = String(userData.telefono || '').replace(/[^0-9]/g, '').slice(-8);
+        const telefonoPayload = telDigits ? `+53 ${telDigits}` : '';
+
         const payload = {
           first_name,
           last_name,
           email: userData.email,
-          telefono: userData.telefono,
+          telefono: telefonoPayload,
           especialidad: userData.especialidad,
           // usamos 'carrera' para mapear departamento si aplica
           carrera: userData.departamento
@@ -80,20 +85,26 @@ function PerfilTutor() {
         const updated = await authService.updateProfile(payload);
         // Actualizar estado con respuesta del servidor
         const nombreResp = (updated.first_name || '') + ' ' + (updated.last_name || '');
+        // Normalizar telefono devuelto por el servidor a solo 8 dígitos
+        const serverTel = updated.telefono || updated.telephone || updated.phone || updated.telefono || '';
+        let serverDigits = String(serverTel || '').replace(/[^0-9]/g, '');
+        if (serverDigits.startsWith('53') && serverDigits.length > 8) serverDigits = serverDigits.slice(serverDigits.length - 8);
+        else if (serverDigits.length > 8) serverDigits = serverDigits.slice(serverDigits.length - 8);
+
         setUserData(prev => ({
           ...prev,
           nombre: nombreResp.trim(),
           email: updated.email || prev.email,
-          telefono: updated.telefono || prev.telefono,
+          telefono: serverDigits || prev.telefono,
           departamento: updated.carrera || updated.grado_academico || prev.departamento,
           especialidad: updated.especialidad || prev.especialidad
         }));
         setErrors({});
         setIsEditing(false);
-        //alert('✅ Perfil actualizado correctamente');
+        //toast.success('✅ Perfil actualizado correctamente');
       } catch (err) {
         console.error('Error al guardar perfil:', err);
-        alert('❌ Error al actualizar el perfil. Intenta de nuevo.');
+        toast.error('❌ Error al actualizar el perfil. Intenta de nuevo.');
       } finally {
         setLoading(false);
       }
@@ -115,6 +126,11 @@ function PerfilTutor() {
   }
 
   const handleInputChange = (field, value) => {
+    // Sanitizar teléfono y limitar a 8 caracteres (sin notificar al escribir)
+    if (field === 'telefono') {
+      let v = String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+      value = v;
+    }
     setUserData(prev => ({
       ...prev,
       [field]: value
@@ -187,14 +203,20 @@ function PerfilTutor() {
 
               <div className="form-group">
                 <label htmlFor="telefono">Teléfono</label>
-                <input
-                  type="tel"
-                  id="telefono"
-                  value={userData.telefono}
-                  onChange={(e) => handleInputChange('telefono', e.target.value)}
-                  disabled={!isEditing}
-                  className="inputr"
-                />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ marginRight: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '4px' }}>+53</span>
+                  <input
+                    type="tel"
+                    id="telefono"
+                    value={userData.telefono || ''}
+                    onChange={(e) => handleInputChange('telefono', e.target.value)}
+                    disabled={!isEditing}
+                    className="inputr"
+                    placeholder="12345678"
+                    maxLength={8}
+                    style={{ flex: 1 }}
+                  />
+                </div>
                 {errors.telefono && <div className="field-error">{errors.telefono}</div>}
               </div>
 

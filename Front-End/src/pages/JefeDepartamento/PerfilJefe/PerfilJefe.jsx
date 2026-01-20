@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import { validateProfile } from '../../../utils/validation';
 import ChangePasswordModal from '../../../components/ChangePasswordModal/ChangePasswordModal';
+import { toast } from 'react-toastify';
 //import { useAuth } from '../../../hooks/useAuth';
 
 function PerfilJefe() {
@@ -22,6 +23,23 @@ function PerfilJefe() {
   // Cargar perfil y estadísticas del jefe
   useEffect(() => {
     cargarPerfil();
+  }, []);
+
+  // Escuchar notificaciones de cambios en usuarios (desde Admin u otras pestañas)
+  useEffect(() => {
+    const handler = () => {
+      console.log('📣 Notificación de usuarios actualizados recibida en PerfilJefe — recargando perfil');
+      cargarPerfil();
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'users_updated') handler();
+    });
+    window.addEventListener('users_updated', handler);
+
+    return () => {
+      window.removeEventListener('users_updated', handler);
+    };
   }, []);
 
   const cargarPerfil = async () => {
@@ -45,15 +63,15 @@ function PerfilJefe() {
         oficina: response.data.office || ''
       });
       
-      // Cargar usuarios activos
-      const usuariosResponse = await api.get('/auth/users/?role=estudiante');
+      // Cargar usuarios activos (anti-cache)
+      const usuariosResponse = await api.get('/auth/users/', { params: { role: 'estudiante', t: Date.now() } });
       const usuariosActivos = Array.isArray(usuariosResponse.data) 
         ? usuariosResponse.data.length 
         : usuariosResponse.data.results?.length || 0;
       
       // Cargar SOLO las solicitudes revisadas por ESTE jefe específico
       console.log(`🔍 Buscando solicitudes con reviewed_by=${response.data.id}`);
-      const solicitudesRevisadas = await api.get(`/requests/?reviewed_by=${response.data.id}`);
+      const solicitudesRevisadas = await api.get('/requests/', { params: { reviewed_by: response.data.id, t: Date.now() } });
       const solicitudesArray = Array.isArray(solicitudesRevisadas.data) 
         ? solicitudesRevisadas.data 
         : solicitudesRevisadas.data.results || [];
@@ -142,26 +160,67 @@ function PerfilJefe() {
       // Obtener ID del usuario actual
       const meResponse = await api.get('/auth/users/me/');
       const userId = meResponse.data.id;
-      
-      // Actualizar datos del usuario
-      await api.patch(`/auth/users/${userId}/`, {
+
+      // Preparar nombre: separar en first_name / last_name
+      const nombreCompleto = userData.nombre || '';
+      const parts = nombreCompleto.trim().split(/\s+/);
+      const first_name = parts.shift() || '';
+      const last_name = parts.join(' ') || '';
+
+      // Preparar telefono con prefijo +53
+      const telDigits = String(userData.telefono || '').replace(/[^0-9]/g, '').slice(-8);
+      const telefonoPayload = telDigits ? `+53 ${telDigits}` : '';
+
+      // Actualizar datos del usuario (incluyendo nombre separado)
+      const resp = await api.patch(`/auth/users/${userId}/`, {
+        first_name,
+        last_name,
         email: userData.email,
-        telefono: userData.telefono,
+        telefono: telefonoPayload,
         office: userData.oficina
       });
+
+      console.log('Respuesta PATCH perfil (jefe):', resp.data);
       
       setIsEditing(false);
-      //alert('✅ Perfil actualizado correctamente');
+      // Actualizar estado local con lo que devolvió el servidor
       setErrors({});
+      if (resp && resp.data) {
+        // Normalizar telefono devuelto
+        const serverTel = resp.data.telefono || resp.data.phone || '';
+        let serverDigits = String(serverTel || '').replace(/[^0-9]/g, '');
+        if (serverDigits.startsWith('53') && serverDigits.length > 8) serverDigits = serverDigits.slice(serverDigits.length - 8);
+        else if (serverDigits.length > 8) serverDigits = serverDigits.slice(serverDigits.length - 8);
+
+        setUserData(prev => ({
+          ...prev,
+          nombre: resp.data.get_full_name || `${resp.data.first_name || ''} ${resp.data.last_name || ''}`.trim() || resp.data.username || prev.nombre,
+          email: resp.data.email || prev.email,
+          telefono: serverDigits || prev.telefono,
+          oficina: resp.data.office || prev.oficina
+        }));
+      }
+      // Asegurar recarga completa de otros datos
       cargarPerfil();
+      try {
+        localStorage.setItem('users_updated', Date.now().toString());
+        window.dispatchEvent(new Event('users_updated'));
+      } catch (e) {
+        console.warn('No se pudo notificar actualización de usuarios desde PerfilJefe:', e);
+      }
     } catch (err) {
       console.error('Error al actualizar perfil:', err);
       console.error('Detalles:', err.response?.data);
-      alert('❌ Error al actualizar el perfil');
+      toast.error('❌ Error al actualizar el perfil');
     }
   };
 
   const handleInputChange = (field, value) => {
+    // Sanitizar teléfono y limitar a 8 caracteres (sin notificar al escribir)
+    if (field === 'telefono') {
+      let v = String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+      value = v;
+    }
     setUserData(prev => ({
       ...prev,
       [field]: value
@@ -305,14 +364,20 @@ function PerfilJefe() {
 
               <div className="form-group">
                 <label htmlFor="telefono">Teléfono</label>
-                <input
-                  type="tel"
-                  id="telefono"
-                  value={userData.telefono}
-                  onChange={(e) => handleInputChange('telefono', e.target.value)}
-                  disabled={!isEditing}
-                  className="inputr"
-                />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ marginRight: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '4px' }}>+53</span>
+                  <input
+                    type="tel"
+                    id="telefono"
+                    value={userData.telefono || ''}
+                    onChange={(e) => handleInputChange('telefono', e.target.value)}
+                    disabled={!isEditing}
+                    className="inputr"
+                    placeholder="12345678"
+                    maxLength={8}
+                    style={{ flex: 1 }}
+                  />
+                </div>
                 {errors.telefono && <div className="field-error">{errors.telefono}</div>}
               </div>
             </div>
@@ -418,10 +483,7 @@ function PerfilJefe() {
                   <span>{solicitudSeleccionada.student_name || 'Sin nombre'}</span>
                 </div>
 
-                <div className="detalle-item">
-                  <label>Matrícula:</label>
-                  <span>{solicitudSeleccionada.student_matricula || 'N/A'}</span>
-                </div>
+                {/* Matrícula removida; campo no existe */}
 
                 <div className="detalle-item">
                   <label>Estado:</label>

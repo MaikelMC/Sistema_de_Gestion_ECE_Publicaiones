@@ -23,7 +23,7 @@ function AdminLayout() {
     { path: '/admin/usuarios', label: 'Usuarios', icon: '👥' },
     { path: '/admin/notificaciones', label: 'Notificaciones', icon: '🔔' },
     { path: '/admin/logs', label: 'Logs', icon: '📝' },
-    { path: '/admin/configuracion', label: 'Configuración', icon: '⚙️' },
+    //{ path: '/admin/configuracion', label: 'Configuración', icon: '⚙️' },
   ];
 
   return (

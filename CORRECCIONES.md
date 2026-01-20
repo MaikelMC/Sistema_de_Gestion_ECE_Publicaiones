@@ -1,8 +1,8 @@
 En este documento se van a colocar todas las correcciones que deben hacerse en el proyecto
 
-- Verificar que la página responda bien al error 404, 500 entre otros 
-- Saber cómo se instancias las vistas 
-- Al equivocarse en un formulario no recargar informar el error al momento que se está llenando em formulario no borrarlos y volverlos a pedir
+- Verificar que la página responda bien al error 404, 500 entre otros -> ECHO ✅
+- Saber cómo se instancias las vistas -> ECHO ✅
+- Al equivocarse en un formulario no recargar informar el error al momento que se está llenando em formulario no borrarlos y volverlos a pedir-> ECHO ✅
 
 Errores del Backend 
 - El campo matrícula está mal no debería ir tiene que ser año que cursa -> ECHO ✅
@@ -34,3 +34,8 @@ Errores del Backend
 - Quitar el campo oficina y años de experiencia del perfil de tutor -> ECHO ✅
 
 - Que al actualizar el perfil de cualquier uaurio, se actualice la pagina con los nuevos datos sin saltar la aletra y tener que dar aceptacion para que se actualicen los datos -> ECHO ✅
+
+- Revisar la validacion de cada campo encda formulario
+
+- Revisar el modal de publicacion para que tenga el campo tutor y poder agregar un tutor a las publicaiones(esta realcion debe reflejarsele a cada tutor)
+-

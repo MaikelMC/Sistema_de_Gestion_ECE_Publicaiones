@@ -2,6 +2,7 @@
 import './Reportes.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { toast } from 'react-toastify';
 
 function Reportes() {
   const [datosReporte, setDatosReporte] = useState({});
@@ -103,11 +104,11 @@ function Reportes() {
   };
 
   const exportarPDF = () => {
-    alert(`📊 Generando reporte ${periodo} en PDF...`);
+    toast.info(`📊 Generando reporte ${periodo} en PDF...`);
   };
 
   const exportarExcel = () => {
-    alert(`📈 Exportando datos ${periodo} a Excel...`);
+    toast.info(`📈 Exportando datos ${periodo} a Excel...`);
   };
 
   const { 
@@ -178,7 +179,7 @@ function Reportes() {
       <header className="page-header">
         <div className="header-left">
           <h1>Reportes y Estadísticas</h1>
-          <p>Métricas y análisis del departamento</p>
+          <p>Métricas y análisis</p>
         </div>
         <div className="header-actions">
           <button className="btn-exportar" onClick={exportarPDF}>

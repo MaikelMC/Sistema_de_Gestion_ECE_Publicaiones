@@ -1,6 +1,7 @@
 import './Configuracion.css';
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import config from '../../../config/config';
 
 function Configuracion() {
   const [config, setConfig] = useState({
@@ -32,7 +33,7 @@ function Configuracion() {
   const cargarConfiguracion = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/system-config/');
+      const response = await api.get(config.endpoints.SYSTEM_CONFIG);
       
       console.log('Configuración cargada:', response.data);
       
@@ -87,18 +88,18 @@ function Configuracion() {
       const promises = configArray.map(async (item) => {
         try {
           // Intentar obtener la configuración existente
-          const existing = await api.get(`/system-config/?key=${item.key}`);
+          const existing = await api.get(`${config.endpoints.SYSTEM_CONFIG}?key=${item.key}`);
           
           if (existing.data && existing.data.length > 0) {
             // Actualizar existente
-            return await api.put(`/system-config/${existing.data[0].id}/`, item);
+            return await api.put(`${config.endpoints.SYSTEM_CONFIG}${existing.data[0].id}/`, item);
           } else {
             // Crear nuevo
-            return await api.post('/system-config/', item);
+            return await api.post(config.endpoints.SYSTEM_CONFIG, item);
           }
         } catch (error) {
           // Si no existe, crear
-          return await api.post('/system-config/', item);
+          return await api.post(config.endpoints.SYSTEM_CONFIG, item);
         }
       });
 

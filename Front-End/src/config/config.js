@@ -48,7 +48,9 @@ export const config = {
     
     // System
     SYSTEM_LOGS: '/system-logs/',
-    SYSTEM_CONFIG: '/system-config/',
+    // El backend registra system-config dentro de la app 'requests',
+    // por eso la ruta pública es /requests/system-config/ bajo /api
+    SYSTEM_CONFIG: '/requests/system-config/',
   }
 };
 
