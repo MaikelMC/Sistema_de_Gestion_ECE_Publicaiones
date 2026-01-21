@@ -345,6 +345,9 @@ function PerfilJefe() {
                   onChange={(e) => handleInputChange('nombre', e.target.value)}
                   disabled={!isEditing}
                   className="inputr"
+                  maxLength={100}
+                  pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+"
+                  title="Solo letras, espacios, guiones o apóstrofes"
                 />
                 {errors.nombre && <div className="field-error">{errors.nombre}</div>}
               </div>
@@ -358,6 +361,7 @@ function PerfilJefe() {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={!isEditing}
                   className="inputr"
+                  maxLength={100}
                 />
                 {errors.email && <div className="field-error">{errors.email}</div>}
               </div>

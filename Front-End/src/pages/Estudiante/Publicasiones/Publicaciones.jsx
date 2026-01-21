@@ -399,6 +399,7 @@ function Publicaciones() {
                   className="inputr"
                   required
                   placeholder="Ingresa el título completo"
+                  maxLength={200}
                 />
               </div>
 
@@ -413,6 +414,9 @@ function Publicaciones() {
                       onChange={(e) => handleAuthorChange(idx, e.target.value)}
                       placeholder={`Autor ${idx + 1}`}
                       required={idx === 0}
+                      maxLength={100}
+                      pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s',.-]+"
+                      title="Solo letras, espacios, guiones, apóstrofes, puntos o comas"
                     />
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
                       {publicacionData.autores.length > 1 && (
@@ -492,6 +496,7 @@ function Publicaciones() {
                   onChange={handleInputChange}
                   className="inputr"
                   placeholder="Nombre de la revista o conferencia"
+                  maxLength={200}
                 />
               </div>
 
@@ -507,6 +512,7 @@ function Publicaciones() {
                   placeholder="Ej: 123-135"
                   pattern="\d+(-\d+)?"
                   title="Ingrese números o un rango (ej: 123-135)"
+                  maxLength={20}
                 />
               </div>
 
@@ -520,6 +526,7 @@ function Publicaciones() {
                   className="inputr textarea"
                   rows="4"
                   placeholder="Resumen de la publicación..."
+                  maxLength={1000}
                 />
               </div>
 

@@ -11,12 +11,20 @@
 }
 
 .filtro-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border: 2px solid var(--color-border);
   background: white;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.filtro-btn:hover:not(:disabled):not(.active) {
+  background: #f3f4f6;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
 .filtro-btn:disabled {
@@ -25,9 +33,10 @@
 }
 
 .filtro-btn.active {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), #5b21b6);
   color: white;
   border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .table-container {
@@ -100,29 +109,53 @@
 }
 
 .btn-editar, .btn-eliminar {
-  padding: 0.5rem;
-  border: none;
-  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-editar {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.btn-editar:hover {
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-eliminar {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: #fca5a5;
+  color: #dc2626;
 }
 
-.btn-editar:hover, .btn-eliminar:hover {
-  transform: scale(1.1);
+.btn-eliminar:hover {
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+  border-color: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .btn-editar:disabled, .btn-eliminar:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+}
+
+.btn-editar:active:not(:disabled), .btn-eliminar:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .error-message {
@@ -137,17 +170,20 @@
 }
 
 .btn-retry {
-  padding: 0.5rem 1rem;
-  background: #dc2626;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .btn-retry:hover {
-  background: #b91c1c;
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.4);
 }
 
 .table-header {
@@ -164,18 +200,24 @@
 }
 
 .btn-refresh {
-  padding: 0.5rem 1rem;
-  background: var(--color-primary);
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, var(--color-primary), #5b21b6);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .btn-refresh:hover {
-  background: var(--color-primary-dark);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #5b21b6, #4c1d95);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-refresh:active {
+  transform: translateY(0);
 }
 
 .user-name {

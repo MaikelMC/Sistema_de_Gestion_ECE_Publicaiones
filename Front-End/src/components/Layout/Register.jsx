@@ -154,6 +154,9 @@ function Register() {
                 required
                 disabled={loading}
                 autoComplete="off"
+                maxLength={30}
+                pattern="[A-Za-z0-9._-]{3,30}"
+                title="Solo letras, números, puntos, guiones o guiones bajos (3-30 caracteres)"
               />
             </div>
           </div>
@@ -171,6 +174,9 @@ function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                maxLength={50}
+                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+"
+                title="Solo letras, espacios, guiones o apóstrofes"
               />
             </div>
           </div>
@@ -188,6 +194,9 @@ function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                maxLength={50}
+                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+"
+                title="Solo letras, espacios, guiones o apóstrofes"
               />
             </div>
           </div>
@@ -208,6 +217,7 @@ function Register() {
                 required
                 disabled={loading}
                 autoComplete="off"
+                maxLength={100}
               />
             </div>
           </div>

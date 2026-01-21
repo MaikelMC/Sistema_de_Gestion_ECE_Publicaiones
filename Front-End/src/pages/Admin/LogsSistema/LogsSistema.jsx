@@ -7,8 +7,9 @@ export default function LogsSistema() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(10); // Limitado a 10 registros por página
   const [totalPages, setTotalPages] = useState(1);
+  const [showOnlyRecent, setShowOnlyRecent] = useState(true); // Filtro para últimos 10
   const [filters, setFilters] = useState({ action: '', model_name: '', user: '', search: '', ordering: '-created_at', start_date: '', end_date: '' });
 
   const fetchLogs = async () => {
@@ -16,7 +17,7 @@ export default function LogsSistema() {
     try {
       const params = {
         page,
-        page_size: pageSize,
+        page_size: showOnlyRecent ? 10 : pageSize, // Si está activo el filtro, solo 10
         action: filters.action || undefined,
         model_name: filters.model_name || undefined,
         user: filters.user || undefined,
@@ -28,10 +29,13 @@ export default function LogsSistema() {
       const resp = await api.get('/requests/system-logs/', { params });
       const data = resp.data;
       if (data.results !== undefined) {
-        setLogs(data.results);
-        setTotalPages(Math.ceil((data.count || data.results.length) / pageSize));
+        // Si showOnlyRecent, tomar solo los primeros 10
+        const logsData = showOnlyRecent ? data.results.slice(0, 10) : data.results;
+        setLogs(logsData);
+        setTotalPages(showOnlyRecent ? 1 : Math.ceil((data.count || data.results.length) / pageSize));
       } else if (Array.isArray(data)) {
-        setLogs(data);
+        const logsData = showOnlyRecent ? data.slice(0, 10) : data;
+        setLogs(logsData);
         setTotalPages(1);
       } else {
         setLogs([]);
@@ -48,7 +52,7 @@ export default function LogsSistema() {
   useEffect(() => {
     fetchLogs();
     // eslint-disable-next-line
-  }, [page, filters]);
+  }, [page, filters, showOnlyRecent]);
 
   const handleExportCsv = () => {
     const rows = [
@@ -79,6 +83,14 @@ export default function LogsSistema() {
       <h2>Logs del Sistema</h2>
 
       <div className="logs-filters">
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={showOnlyRecent}
+            onChange={(e) => { setShowOnlyRecent(e.target.checked); setPage(1); }}
+          />
+          Mostrar solo últimos 10
+        </label>
         <input placeholder="Buscar descripción..." value={filters.search} onChange={e => setFilters({...filters, search: e.target.value, page:1})} />
         <select value={filters.action} onChange={e => setFilters({...filters, action: e.target.value, page:1})}>
           <option value="">Todas las acciones</option>

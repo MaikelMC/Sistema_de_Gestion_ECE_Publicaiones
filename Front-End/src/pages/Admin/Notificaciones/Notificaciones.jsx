@@ -6,6 +6,7 @@ const Notificaciones = () => {
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showOnlyRecent, setShowOnlyRecent] = useState(true); // Filtro para últimos 10
   const [filters, setFilters] = useState({
     notification_type: '',
     severity: '',
@@ -38,16 +39,20 @@ const Notificaciones = () => {
       if (filters.notification_type) params.notification_type = filters.notification_type;
       if (filters.severity) params.severity = filters.severity;
       if (filters.is_read !== '') params.is_read = filters.is_read;
+      // Limitar a 10 si está activo el filtro
+      if (showOnlyRecent) params.limit = 10;
 
       const response = await api.get('/requests/notifications/', { params });
-      setNotifications(response.data || []);
+      // Aplicar límite de 10 si está activo
+      const data = response.data || [];
+      setNotifications(showOnlyRecent ? data.slice(0, 10) : data);
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
       setNotifications([]);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, showOnlyRecent]);
 
   const fetchStats = async () => {
     try {
@@ -135,6 +140,17 @@ const Notificaciones = () => {
 
       {/* Filtros */}
       <div className="filters-container">
+        <div className="filter-group">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={showOnlyRecent}
+              onChange={(e) => setShowOnlyRecent(e.target.checked)}
+            />
+            Mostrar solo últimas 10
+          </label>
+        </div>
+
         <div className="filter-group">
           <label>Tipo:</label>
           <select 

@@ -245,6 +245,9 @@ function Perfil() {
                   disabled={!isEditing}
                   className="inputr"
                   placeholder="Nombre"
+                  maxLength={50}
+                  pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+"
+                  title="Solo letras, espacios, guiones o apóstrofes"
                 />
                 {errors.first_name && <div className="field-error">{errors.first_name}</div>}
               </div>
@@ -258,6 +261,9 @@ function Perfil() {
                   disabled={!isEditing}
                   className="inputr"
                   placeholder="Apellidos"
+                  maxLength={50}
+                  pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+"
+                  title="Solo letras, espacios, guiones o apóstrofes"
                 />
                 {errors.last_name && <div className="field-error">{errors.last_name}</div>}
               </div>
@@ -270,6 +276,7 @@ function Perfil() {
                   disabled={true}
                   className="inputr"
                   title="El nombre de usuario no se puede cambiar. Es tu identificador único de login."
+                  maxLength={30}
                 />
                 <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
                   No se puede cambiar. Es tu identificador único de login.
@@ -285,6 +292,7 @@ function Perfil() {
                   disabled={!isEditing}
                   className="inputr"
                   placeholder="usuario@uci.cu"
+                  maxLength={100}
                 />
                 {errors.email && <div className="field-error">{errors.email}</div>}
               </div>
