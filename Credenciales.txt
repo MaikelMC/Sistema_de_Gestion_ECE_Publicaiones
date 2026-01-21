@@ -11,8 +11,7 @@ Estudiante
 maikelis
 pwd: malkova12345
 
-- danielis
-pwd: Dani12345
+- danielis   
 
-randy
+randy 
 pwd: randy1234
