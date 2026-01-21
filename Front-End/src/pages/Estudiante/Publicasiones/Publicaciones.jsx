@@ -130,9 +130,9 @@ function Publicaciones() {
     }
     
     if (name === 'paginas' && value) {
-      // Solo permitir números (ej: 123)
-      if (!/^\d*$/.test(value)) {
-        toast.warning('Las páginas deben contener solo números');
+      // Permitir números o rangos (ej: 123 o 123-135)
+      if (!/^\d*(-\d*)?$/.test(value)) {
+        toast.warning('Las páginas deben contener números o un rango (ej: 123-135)');
         return;
       }
     }
