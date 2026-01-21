@@ -422,7 +422,7 @@ function Perfil() {
                 <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>✅ Aprobadas</div>
               </div>
 
-              {/* Mostrar solo los estados relevantes: Enviada y Aprobada */}
+               {/* Mostrar solo los estados relevantes: Enviada y Aprobada */}
             </div>
           )}
         </section>

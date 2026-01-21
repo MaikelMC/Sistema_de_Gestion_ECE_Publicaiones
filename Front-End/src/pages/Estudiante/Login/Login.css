@@ -141,7 +141,7 @@
 
 .form-input {
   width: 100%;
-  padding: 10px 12px 10px 40px; /* menos padding vertical */
+  padding: 10px 12px; /* padding uniforme sin ícono */
   border: 2px solid var(--color-border);
   border-radius: 10px;
   font-size: 0.95rem;

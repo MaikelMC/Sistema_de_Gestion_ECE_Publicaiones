@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Publication, TutorOpinion, TutorStudent
+from .models import Publication, TutorOpinion, TutorStudent, StudentOpinion
 from authentication.serializers import UserListSerializer
 
 
@@ -106,14 +106,48 @@ class PublicationCreateSerializer(serializers.ModelSerializer):
             if not isinstance(tutor, User):
                 # Si es un ID, intentar obtener el usuario
                 try:
-                    tutor = User.objects.get(id=tutor, role='tutor', activo=True)
+                    tutor = User.objects.get(id=tutor, role__in=['tutor', 'jefe'], activo=True)
                     attrs['tutor'] = tutor
                 except User.DoesNotExist:
-                    raise serializers.ValidationError({"tutor": "Tutor no válido o inactivo."})
-            elif tutor.role != 'tutor' or not tutor.activo:
-                raise serializers.ValidationError({"tutor": "El usuario seleccionado no es un tutor activo."})
+                    raise serializers.ValidationError(
+                        {"tutor": "El tutor seleccionado no es válido o está inactivo."}
+                    )
+            else:
+                # Si es un objeto, validar directamente
+                if tutor.role not in ['tutor', 'jefe']:
+                    raise serializers.ValidationError(
+                        {"tutor": "El usuario seleccionado no es un tutor válido."}
+                    )
+                if not tutor.activo:
+                    raise serializers.ValidationError(
+                        {"tutor": "El tutor seleccionado está inactivo."}
+                    )
         
         return attrs
+    
+    def validate_tutor(self, value):
+        """Validación adicional específica del campo tutor"""
+        if value is not None:
+            from authentication.models import User
+            # Si es un ID, verificar que el usuario existe y es tutor o jefe
+            if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
+                try:
+                    tutor = User.objects.get(id=value)
+                except User.DoesNotExist:
+                    raise serializers.ValidationError(
+                        "El tutor seleccionado no existe."
+                    )
+                # Verificar que sea tutor o jefe
+                if tutor.role not in ['tutor', 'jefe']:
+                    raise serializers.ValidationError(
+                        f"El usuario seleccionado tiene rol '{tutor.role}', no es un tutor válido."
+                    )
+                # Verificar que esté activo
+                if not tutor.activo:
+                    raise serializers.ValidationError(
+                        "El tutor seleccionado está inactivo."
+                    )
+        return value
     
     def create(self, validated_data):
         # Asignar el estudiante actual
@@ -314,3 +348,34 @@ class PublicationDetailSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.file.url)
             return obj.file.url
         return None
+
+
+class StudentOpinionSerializer(serializers.ModelSerializer):
+    """
+    Serializer para opiniones sobre estudiantes
+    """
+    tutor_name = serializers.CharField(source='tutor.get_full_name', read_only=True)
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    student_email = serializers.CharField(source='student.email', read_only=True)
+    file_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StudentOpinion
+        fields = [
+            'id', 'tutor', 'tutor_name', 'student', 'student_name',
+            'student_email', 'file', 'file_url',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'tutor', 'file_url', 'created_at', 'updated_at']
+    
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+    
+    def create(self, validated_data):
+        validated_data['tutor'] = self.context['request'].user
+        return super().create(validated_data)

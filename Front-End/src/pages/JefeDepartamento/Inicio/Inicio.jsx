@@ -9,7 +9,7 @@ function Inicio() {
   const navigate = useNavigate();
   const { user } = useAuth(); // Obtener usuario actual del hook
   const [statsData, setStatsData] = useState({
-    solicitudesPendientes: 0,
+    solicitudesEnProceso: 0,
     solicitudesAprobadas: 0,
     solicitudesRechazadas: 0,
     publicacionesRegistradas: 0,
@@ -18,6 +18,9 @@ function Inicio() {
   const [estudiantes, setEstudiantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Estado para el modal de estudiante
+  const [modalEstudiante, setModalEstudiante] = useState(null);
 
   // Recargar estadísticas cuando cambia el usuario
   useEffect(() => {
@@ -56,11 +59,11 @@ function Inicio() {
       console.log('   - Nombre:', meResponse.data.get_full_name || meResponse.data.username);
       console.log('   - Email:', meResponse.data.email);
 
-      // Cargar estudiantes y solicitudes revisadas por ESTE jefe
-      console.log(`🔍 Buscando solicitudes con reviewed_by=${jefeId}`);
+      // Cargar estudiantes y TODAS las solicitudes (no solo las revisadas por este jefe)
+      console.log(`🔍 Cargando todas las solicitudes del sistema`);
       const [estudiantesRes, solicitudesRes, publicacionesRes] = await Promise.all([
         api.get('/auth/users/', { params: { role: 'estudiante', t: Date.now() } }),
-        api.get(`/requests/`, { params: { reviewed_by: jefeId, t: Date.now() } }),
+        api.get(`/requests/`, { params: { t: Date.now() } }),
         api.get('/publications/stats/', { params: { t: Date.now() } })
       ]);
 
@@ -70,7 +73,7 @@ function Inicio() {
         : solicitudesRes.data.results || [];
       
       console.log('📋 Datos de estudiantes recibidos:', listaEstudiantes.length);
-      console.log('📊 Solicitudes del jefe:', listaSolicitudes);
+      console.log('📊 TODAS las solicitudes del sistema:', listaSolicitudes);
       console.log('📊 Cantidad total:', listaSolicitudes.length);
       
       // Mostrar detalles de cada solicitud
@@ -84,12 +87,18 @@ function Inicio() {
         });
       });
       
-      // Contar solicitudes por estado que ESTE jefe ha revisado
+      // Contar TODAS las solicitudes por estado en el sistema
       const aprobadas = listaSolicitudes.filter(s => s.status === 'aprobada').length;
       const rechazadas = listaSolicitudes.filter(s => s.status === 'rechazada').length;
-      const pendientes = listaSolicitudes.filter(s => s.status === 'pendiente').length;
+      const enProceso = listaSolicitudes.filter(s => s.status === 'en_proceso').length;
       
-      console.log('Conteo:', { aprobadas, rechazadas, pendientes }); // Debug
+      console.log('🔍 DEPURACIÓN CONTEO SOLICITUDES EN PROCESO:');
+      console.log('   📊 Total solicitudes recibidas:', listaSolicitudes.length);
+      console.log('   🤪 En proceso (en_proceso):', enProceso);
+      console.log('   ✅ Aprobadas:', aprobadas);
+      console.log('   ❌ Rechazadas:', rechazadas);
+      console.log('   📋 Estados únicos encontrados:', [...new Set(listaSolicitudes.map(s => s.status))]);
+      console.log('   🔎 Solicitudes con status en_proceso:', listaSolicitudes.filter(s => s.status === 'en_proceso'));
       
       // Calcular tasa de aprobación
       const total = aprobadas + rechazadas;
@@ -99,11 +108,17 @@ function Inicio() {
       const publicacionesCount = (pubsData.total ?? pubsData.count ?? pubsData.total_results ?? (Array.isArray(pubsData.results) ? pubsData.results.length : 0)) || 0;
 
       setStatsData({
-        solicitudesPendientes: pendientes,
+        solicitudesEnProceso: enProceso,
         solicitudesAprobadas: aprobadas,
         solicitudesRechazadas: rechazadas,
         publicacionesRegistradas: publicacionesCount,
         estudiantesActivos: listaEstudiantes.length
+      });
+
+      console.log('📈 ESTADO ACTUALIZADO:', {
+        solicitudesEnProceso: enProceso,
+        solicitudesAprobadas: aprobadas,
+        solicitudesRechazadas: rechazadas
       });
 
       setEstudiantes(listaEstudiantes);
@@ -144,15 +159,14 @@ function Inicio() {
       {/* Tarjetas de Estadísticas Rápidas (usando estilos compartidos de stats) */}
       <section className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon">📝</div>
+          <div className="stat-icon">📮</div>
           <div className="stat-info">
-            <div className="stat-number">{statsData.solicitudesPendientes}</div>
-            <div className="stat-label">Solicitudes Pendientes</div>
+            <div className="stat-number">{statsData.solicitudesEnProceso}</div>
+            <div className="stat-label">Solicitudes En Proceso</div>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
+        <div className="stat-card">          <div className="stat-icon">✅</div>
           <div className="stat-info">
             <div className="stat-number">{statsData.solicitudesAprobadas}</div>
             <div className="stat-label">Solicitudes Aprobadas</div>
@@ -196,7 +210,7 @@ function Inicio() {
         ) : (
           <div className="estudiantes-grid">
             {estudiantes.map((estudiante) => (
-              <div key={estudiante.id} className="estudiante-card">
+              <div key={estudiante.id} className="estudiante-card" style={{cursor:'pointer'}} onClick={() => setModalEstudiante(estudiante)}>
                 <div className="estudiante-info">
                   <h4>
                     {estudiante.first_name && estudiante.last_name 
@@ -212,6 +226,58 @@ function Inicio() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Modal de datos del estudiante */}
+        {modalEstudiante && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.35)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onClick={() => setModalEstudiante(null)}
+          >
+            <div style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 32,
+              minWidth: 320,
+              maxWidth: 400,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+              position: 'relative'
+            }} onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => setModalEstudiante(null)} 
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  fontSize: 20,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                ×
+              </button>
+              <h2 style={{ marginTop: 0, marginBottom: 16 }}>👤 Datos del Estudiante</h2>
+              <p><strong>Nombre:</strong> {modalEstudiante.first_name && modalEstudiante.last_name ? `${modalEstudiante.first_name} ${modalEstudiante.last_name}` : modalEstudiante.full_name || modalEstudiante.username || 'Sin nombre'}</p>
+              <p><strong>Email:</strong> {modalEstudiante.email}</p>
+              <p><strong>Año:</strong> {modalEstudiante.anno || 'Sin año'}</p>
+              <p><strong>Usuario:</strong> {modalEstudiante.username}</p>
+              {modalEstudiante.ci && <p><strong>CI:</strong> {modalEstudiante.ci}</p>}
+              {modalEstudiante.telefono && <p><strong>Teléfono:</strong> {modalEstudiante.telefono}</p>}
+              {modalEstudiante.direccion && <p><strong>Dirección:</strong> {modalEstudiante.direccion}</p>}
+            </div>
           </div>
         )}
       </section>

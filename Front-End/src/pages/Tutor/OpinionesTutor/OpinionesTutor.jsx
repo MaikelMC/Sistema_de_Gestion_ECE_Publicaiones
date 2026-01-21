@@ -1,18 +1,19 @@
-// src/pages/Tutor/OpinionesTutor/OpinionesTutor.jsx - INTEGRADO CON BACKEND
+// src/pages/Tutor/OpinionesTutor/OpinionesTutor.jsx - SIMPLIFICADO SIN MODAL
 import './OpinionesTutor.css';
 import React, { useState, useEffect } from 'react';
 import tutorService from '../../../services/tutorService';
 import { toast } from 'react-toastify';
 
 function OpinionesTutor() {
-  const [publicacionesPendientes, setPublicacionesPendientes] = useState([]);
+  const [estudiantesPendientes, setEstudiantesPendientes] = useState([]);
   const [opinionesEmitidas, setOpinionesEmitidas] = useState([]);
-  const [publicacionSeleccionada, setPublicacionSeleccionada] = useState(null);
-  const [opinion, setOpinion] = useState('');
-  const [recomendacion, setRecomendacion] = useState('aprobada');
-  const [filtro, setFiltro] = useState('todas');
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
+  const [sugerenciasEstudiantes, setSugerenciasEstudiantes] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -23,36 +24,114 @@ function OpinionesTutor() {
       setLoading(true);
       setError(null);
 
-      // Cargar publicaciones pendientes de opinión
-      const pendientes = await tutorService.getPendingPublications();
-      setPublicacionesPendientes(pendientes);
+      // Cargar estudiantes pendientes de opinión
+      console.log('⏳ Llamando API: getPendingStudentsForOpinion()');
+      const pendientes = await tutorService.getPendingStudentsForOpinion();
+      console.log('📥 Respuesta completa:', pendientes);
+      console.log('📥 Tipo:', typeof pendientes);
+      console.log('📥 Es Array?', Array.isArray(pendientes));
+      console.log('📥 Longitud:', pendientes?.length);
+      
+      if (Array.isArray(pendientes)) {
+        if (pendientes.length > 0) {
+          console.log('✅ Primer estudiante:', pendientes[0]);
+          console.log('📋 Todos los estudiantes:', pendientes.map(e => ({ 
+            id: e.id, 
+            student_name: e.student_name, 
+            student_email: e.student_email,
+            student: e.student
+          })));
+        } else {
+          console.log('⚠️ Array vacío - No hay estudiantes pendientes');
+        }
+      } else {
+        console.log('❌ Respuesta NO es un array:', pendientes);
+      }
+      
+      setEstudiantesPendientes(pendientes || []);
 
       // Cargar opiniones ya emitidas
-      const opiniones = await tutorService.getMyOpinions();
-      setOpinionesEmitidas(opiniones);
+      const opiniones = await tutorService.getStudentOpinions();
+      setOpinionesEmitidas(opiniones || []);
 
     } catch (err) {
-      console.error('Error al cargar datos:', err);
+      console.error('❌ Error al cargar datos:', err);
       setError('Error al cargar los datos. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
-  const emitirOpinion = async (publicacionId) => {
-    if (!opinion.trim()) {
-      toast.warning('Por favor, escribe tu opinión antes de enviar.');
+  const manejarCambioBusqueda = (valor) => {
+    console.log('🔍 Buscando:', valor);
+    console.log('📚 Total de estudiantes disponibles:', estudiantesPendientes.length);
+    setBusquedaEstudiante(valor);
+    if (valor.trim()) {
+      const sugerencias = estudiantesPendientes.filter(est =>
+        est.student_name?.toLowerCase().includes(valor.toLowerCase()) ||
+        est.student_email?.toLowerCase().includes(valor.toLowerCase())
+      );
+      console.log('✅ Sugerencias encontradas:', sugerencias.length, sugerencias);
+      setSugerenciasEstudiantes(sugerencias);
+      setMostrarSugerencias(true);
+    } else {
+      // Si está vacío, mostrar TODOS los estudiantes
+      console.log('📋 Mostrando todos los estudiantes:', estudiantesPendientes.length);
+      setSugerenciasEstudiantes(estudiantesPendientes);
+      setMostrarSugerencias(true);
+    }
+  };
+
+  const manejarFocusInput = () => {
+    // Cuando se enfoca el input, mostrar TODOS los estudiantes pendientes
+    console.log('📍 Input enfocado - mostrando todos los estudiantes:', estudiantesPendientes.length);
+    setSugerenciasEstudiantes(estudiantesPendientes);
+    setMostrarSugerencias(true);
+  };
+
+  const manejarBlurInput = () => {
+    // Cuando se pierde el foco, ocultamos las sugerencias después de un delay
+    // para permitir que el usuario haga click en una sugerencia
+    setTimeout(() => {
+      setMostrarSugerencias(false);
+    }, 200);
+  };
+
+  const seleccionarEstudiante = (estudiante) => {
+    setEstudianteSeleccionado(estudiante);
+    setBusquedaEstudiante('');
+    setMostrarSugerencias(false);
+    setSugerenciasEstudiantes([]);
+  };
+
+  const limpiarSeleccion = () => {
+    setEstudianteSeleccionado(null);
+    setFile(null);
+    setBusquedaEstudiante('');
+    setSugerenciasEstudiantes([]);
+    setMostrarSugerencias(false);
+  };
+
+  const emitirOpinion = async () => {
+    if (!estudianteSeleccionado) {
+      toast.warning('Por favor, selecciona un estudiante.');
+      return;
+    }
+    if (!file) {
+      toast.warning('Por favor, sube un archivo con tu opinión.');
       return;
     }
 
     try {
       setLoading(true);
 
+      // Crear FormData para enviar archivo
+      const formData = new FormData();
+      formData.append('student', estudianteSeleccionado.student);
+      formData.append('file', file);
+
       // Enviar opinión al backend
-      await tutorService.createOpinion(publicacionId, {
-        opinion: opinion,
-        recommendation: recomendacion
-      });
+      await tutorService.uploadStudentOpinion(formData);
 
       toast.success('✅ Opinión emitida correctamente');
       
@@ -60,9 +139,7 @@ function OpinionesTutor() {
       await cargarDatos();
       
       // Resetear formulario
-      setPublicacionSeleccionada(null);
-      setOpinion('');
-      setRecomendacion('aprobada');
+      limpiarSeleccion();
 
     } catch (err) {
       console.error('Error al emitir opinión:', err);
@@ -72,36 +149,19 @@ function OpinionesTutor() {
     }
   };
 
-  const filtrarOpiniones = () => {
-    if (filtro === 'todas') return opinionesEmitidas;
-    return opinionesEmitidas.filter(op => op.recommendation === filtro);
-  };
-
-  const getRecomendacionColor = (recomendacion) => {
-    switch (recomendacion) {
-      case 'aprobada': return '#10b981';
-      case 'rechazada': return '#ef4444';
-      case 'revision': return '#f59e0b';
-      default: return '#6b7280';
+  const descargarOpinion = (urlArchivo) => {
+    if (urlArchivo) {
+      window.open(urlArchivo, '_blank');
+    } else {
+      toast.error('No hay archivo disponible para descargar');
     }
   };
-
-  const getRecomendacionTexto = (recomendacion) => {
-    switch (recomendacion) {
-      case 'aprobada': return '✅ Aprobar';
-      case 'rechazada': return '❌ Rechazar';
-      case 'revision': return '📝 Requiere Revisión';
-      default: return '📌 Pendiente';
-    }
-  };
-
-  const opinionesFiltradas = filtrarOpiniones();
 
   return (
     <div className="opiniones-tutor">
       <header className="page-header">
-        <h1>💭 Opiniones de Tutor</h1>
-        <p>Emite opiniones y recomendaciones sobre las publicaciones de tus estudiantes</p>
+        <h1>💭 Opiniones de Estudiantes</h1>
+        <p>Emite opiniones sobre el desempeño académico de tus estudiantes</p>
       </header>
 
       {/* Error */}
@@ -121,259 +181,196 @@ function OpinionesTutor() {
 
       {!loading && !error && (
         <>
-      {/* Estadísticas */}
-      <div className="stats-cards">
-        <div className="stat-card">
-          <div className="stat-icon">📄</div>
-          <div className="stat-info">
-            <span className="stat-number">{publicacionesPendientes.length}</span>
-            <span className="stat-label">Pendientes de Opinión</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {opinionesEmitidas.filter(op => op.recommendation === 'aprobada').length}
-            </span>
-            <span className="stat-label">Aprobadas</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📝</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {opinionesEmitidas.filter(op => op.recommendation === 'revision').length}
-            </span>
-            <span className="stat-label">Con Modificaciones</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">❌</div>
-          <div className="stat-info">
-            <span className="stat-number">
-              {opinionesEmitidas.filter(op => op.recommendation === 'rechazada').length}
-            </span>
-            <span className="stat-label">Rechazadas</span>
-          </div>
-        </div>
-      </div>
+          <div className="opiniones-grid">
+            {/* Sección: Emitir Opinión */}
+            <section className="card emitir-opinion-section">
+              <div className="section-header">
+                <h2>📝 Emitir una Opinión</h2>
+              </div>
 
-      <div className="opiniones-grid">
-        {/* Publicaciones Pendientes */}
-        <section className="card pendientes-section">
-          <div className="section-header">
-            <h2>📋 Publicaciones Pendientes de Opinión</h2>
-            <span className="badge">{publicacionesPendientes.length}</span>
-          </div>
-
-          {publicacionesPendientes.length === 0 ? (
-            <div className="no-data">
-              <p>🎉 No hay publicaciones pendientes de opinión</p>
-              <p className="hint">Todas las publicaciones han sido revisadas</p>
-            </div>
-          ) : (
-            <div className="publicaciones-list">
-              {publicacionesPendientes.map(publicacion => (
-                <div key={publicacion.id} className="publicacion-item">
-                  <div className="publicacion-header">
-                    <h3>{publicacion.titulo || publicacion.title}</h3>
-                    <span className="nivel-badge">Nivel {publicacion.nivel}</span>
-                  </div>
-                  
-                  <div className="publicacion-info">
-                    <div className="info-item">
-                      <strong>Estudiante:</strong> {publicacion.student_name || 'No especificado'}
-                    </div>
-                    {/* Matrícula removida; campo no existe */}
-                    <div className="info-item">
-                      <strong>Fecha:</strong> {publicacion.fecha_publicacion || publicacion.publication_date || 'No especificada'}
-                    </div>
-                    <div className="info-item">
-                      <strong>Archivo:</strong> 
-                      {publicacion.file_url ? (
-                        <a href={publicacion.file_url} target="_blank" rel="noopener noreferrer"> 📎 Ver documento</a>
-                      ) : (
-                        ' No disponible'
-                      )}
-                    </div>
+              {estudianteSeleccionado ? (
+                // Mostrar formulario para cargar opinión
+                <div className="opinion-form-container">
+                  {/* Información del estudiante seleccionado */}
+                  <div className="estudiante-info-modal">
+                    <h3>👤 {estudianteSeleccionado.student_name}</h3>
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
+                      📧 {estudianteSeleccionado.student_email}
+                    </p>
                   </div>
 
-                  <div className="publicacion-resumen">
-                    <strong>Resumen:</strong>
-                    <p>{publicacion.resumen || publicacion.abstract || 'No especificado'}</p>
+                  {/* Input de archivo */}
+                  <div className="form-group">
+                    <label htmlFor="file-input">📄 Cargar archivo de opinión:</label>
+                    <input
+                      id="file-input"
+                      type="file"
+                      onChange={(e) => setFile(e.target.files?.[0])}
+                      accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
+                      className="file-input"
+                      disabled={loading}
+                    />
+                    {file && (
+                      <div className="file-info">
+                        📎 <strong>{file.name}</strong> ({(file.size / 1024).toFixed(2)} KB)
+                      </div>
+                    )}
+                    <small>✓ Formatos aceptados: PDF, DOC, DOCX, TXT, XLS, XLSX</small>
                   </div>
 
-                  <div className="publicacion-actions">
+                  {/* Botones de acción */}
+                  <div className="form-actions">
                     <button 
-                      className="btn-opinar"
-                      onClick={() => setPublicacionSeleccionada(publicacion)}
+                      className="btn-confirmar"
+                      onClick={emitirOpinion}
+                      disabled={!file || loading}
                     >
-                      📝 Emitir Opinión
+                      {loading ? '⏳ Enviando...' : '📨 Emitir Opinión'}
                     </button>
-                    {publicacion.file_url && (
-                      <a 
-                        href={publicacion.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-descargar"
-                      >
-                        👍 Descargar
-                      </a>
+                    <button 
+                      className="btn-cancelar-form"
+                      onClick={limpiarSeleccion}
+                      disabled={loading}
+                    >
+                      ← Cambiar Estudiante
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Mostrar buscador de estudiantes
+                <div className="buscar-estudiante-section">
+                  <label htmlFor="busqueda-estudiante" style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 500 }}>
+                    🔍 Selecciona un estudiante:
+                  </label>
+                  <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+                    <input
+                      id="busqueda-estudiante"
+                      type="text"
+                      value={busquedaEstudiante}
+                      onChange={(e) => manejarCambioBusqueda(e.target.value)}
+                      onFocus={manejarFocusInput}
+                      onBlur={manejarBlurInput}
+                      placeholder="Escribe el nombre o email del estudiante..."
+                      className="filtro-select"
+                      style={{ width: '100%', padding: '10px' }}
+                    />
+
+                    {/* Dropdown de sugerencias */}
+                    {mostrarSugerencias && sugerenciasEstudiantes.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderTop: 'none',
+                        borderRadius: '0 0 6px 6px',
+                        maxHeight: '400px',
+                        overflowY: 'auto',
+                        zIndex: 10,
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                      }}>
+                        {sugerenciasEstudiantes.map((est) => (
+                          <div
+                            key={est.id}
+                            onClick={() => seleccionarEstudiante(est)}
+                            style={{
+                              padding: '12px 15px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f3f4f6',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                          >
+                            <div style={{ fontWeight: 500 }}>👤 {est.student_name}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>📧 {est.student_email}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Mensaje cuando no hay sugerencias */}
+                    {mostrarSugerencias && sugerenciasEstudiantes.length === 0 && busquedaEstudiante.trim() && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderTop: 'none',
+                        borderRadius: '0 0 6px 6px',
+                        padding: '12px 15px',
+                        color: '#6b7280',
+                        zIndex: 10
+                      }}>
+                        No se encontraron estudiantes
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* Opiniones Emitidas */}
-        <section className="card emitidas-section">
-          <div className="section-header">
-            <h2>📊 Historial de Opiniones</h2>
-            <select 
-              value={filtro} 
-              onChange={(e) => setFiltro(e.target.value)}
-              className="filtro-select"
-            >
-              <option value="todas">Todas las opiniones</option>
-              <option value="aprobada">Solo aprobadas</option>
-              <option value="revision">Requiere Revisión</option>
-              <option value="rechazada">Solo rechazadas</option>
-            </select>
-          </div>
-
-          {opinionesFiltradas.length === 0 ? (
-            <div className="no-data">
-              <p>📝 No hay opiniones emitidas</p>
-              <p className="hint">Las opiniones que emitas aparecerán aquí</p>
-            </div>
-          ) : (
-            <div className="opiniones-list">
-              {opinionesFiltradas.map(opinionItem => (
-                <div key={opinionItem.id} className="opinion-item">
-                  <div className="opinion-header">
-                    <h3>{opinionItem.publication_title}</h3>
-                    <div 
-                      className="recomendacion-badge"
-                      style={{ backgroundColor: getRecomendacionColor(opinionItem.recommendation) }}
-                    >
-                      {opinionItem.recommendation_display || getRecomendacionTexto(opinionItem.recommendation)}
-                    </div>
-                  </div>
-                  
-                  <div className="opinion-meta">
-                    <span><strong>Opinión emitida:</strong> {new Date(opinionItem.created_at).toLocaleDateString('es-ES')}</span>
-                  </div>
-
-                  <div className="opinion-content">
-                    <strong>Opinión del tutor:</strong>
-                    <p>{opinionItem.opinion}</p>
+                  {/* Área para cargar documento (visible siempre en buscador) */}
+                  <div className="form-group">
+                    <label htmlFor="file-input-default">📄 Cargar archivo de opinión:</label>
+                    <input
+                      id="file-input-default"
+                      type="file"
+                      onChange={(e) => setFile(e.target.files?.[0])}
+                      accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
+                      className="file-input"
+                      disabled={loading}
+                    />
+                    {file && (
+                      <div className="file-info">
+                        📎 <strong>{file.name}</strong> ({(file.size / 1024).toFixed(2)} KB)
+                      </div>
+                    )}
+                    <small>✓ Formatos aceptados: PDF, DOC, DOCX, TXT, XLS, XLSX</small>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+              )}
+            </section>
 
-      {/* Modal para Emitir Opinión */}
-      {publicacionSeleccionada && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>📝 Emitir Opinión</h2>
-              <button 
-                className="btn-cerrar"
-                onClick={() => {
-                  setPublicacionSeleccionada(null);
-                  setOpinion('');
-                  setRecomendacion('aprobada');
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="publicacion-info-modal">
-                <h3>{publicacionSeleccionada.title || publicacionSeleccionada.titulo}</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <strong>Estudiante:</strong> {publicacionSeleccionada.student_name}
-                  </div>
-                  {/* Matrícula removida; campo no existe */}
-                  <div className="info-item">
-                    <strong>Nivel:</strong> Nivel {publicacionSeleccionada.nivel}
-                  </div>
-                  {publicacionSeleccionada.journal && (
-                    <div className="info-item">
-                      <strong>Revista:</strong> {publicacionSeleccionada.journal}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="resumen-section">
-                  <strong>Resumen:</strong>
-                  <p>{publicacionSeleccionada.abstract || publicacionSeleccionada.resumen || 'Sin resumen'}</p>
-                </div>
+            {/* Sección: Historial de Opiniones Emitidas */}
+            <section className="card emitidas-section">
+              <div className="section-header">
+                <h2>📊 Historial de Opiniones Emitidas</h2>
               </div>
 
-              <div className="opinion-form">
-                <div className="form-group">
-                  <label htmlFor="recomendacion">Recomendación:</label>
-                  <select
-                    id="recomendacion"
-                    value={recomendacion}
-                    onChange={(e) => setRecomendacion(e.target.value)}
-                    className="inputr"
-                    disabled={loading}
-                  >
-                    <option value="aprobada">✅ Aprobar publicación</option>
-                    <option value="revision">📝 Requiere revisión</option>
-                    <option value="rechazada">❌ Rechazar publicación</option>
-                  </select>
+              {opinionesEmitidas.length === 0 ? (
+                <div className="no-data">
+                  <p>📝 No hay opiniones emitidas</p>
+                  <p className="hint">Las opiniones que emitas aparecerán aquí</p>
                 </div>
-
-                <div className="form-group">
-                  <label htmlFor="opinion">Opinión detallada:</label>
-                  <textarea
-                    id="opinion"
-                    value={opinion}
-                    onChange={(e) => setOpinion(e.target.value)}
-                    placeholder="Escribe tu opinión detallada sobre la publicación. Incluye fortalezas, áreas de mejora, recomendaciones específicas..."
-                    rows="6"
-                    className="opinion-textarea"
-                  />
-                  <small>Mínimo 50 caracteres. Sé específico y constructivo.</small>
+              ) : (
+                <div className="opiniones-list">
+                  {opinionesEmitidas.map(opinionItem => (
+                    <div key={opinionItem.id} className="opinion-item">
+                      <div className="opinion-header">
+                        <h3>👤 {opinionItem.student_name}</h3>
+                        <span className="opinion-date">
+                          📅 {new Date(opinionItem.created_at).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                      
+                      <div className="opinion-actions">
+                        {opinionItem.file_url && (
+                          <button 
+                            className="btn-descargar"
+                            onClick={() => descargarOpinion(opinionItem.file_url)}
+                          >
+                            📥 Descargar Opinión
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button 
-                className="btn-confirmar"
-                onClick={() => emitirOpinion(publicacionSeleccionada.id)}
-                disabled={opinion.length < 50 || loading}
-              >
-                {loading ? '⏳ Enviando...' : '📨 Enviar Opinión'}
-              </button>
-              <button 
-                className="btn-cancelar"
-                onClick={() => {
-                  setPublicacionSeleccionada(null);
-                  setOpinion('');
-                  setRecomendacion('aprobada');
-                }}
-                disabled={loading}
-              >
-                Cancelar
-              </button>
-            </div>
+              )}
+            </section>
           </div>
-        </div>
-      )}
         </>
       )}
     </div>

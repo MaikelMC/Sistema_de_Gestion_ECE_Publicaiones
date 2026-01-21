@@ -43,16 +43,13 @@ function Login() {
       
     } catch (error) {
       console.error('Error en login:', error);
-      handleApiError(error);
       // Mostrar mensaje específico si la cuenta está bloqueada temporalmente
       const lockedMinutes = error?.response?.data?.locked_minutes;
       if (lockedMinutes) {
         toast.error(`Cuenta bloqueada temporalmente. Intenta de nuevo en ${lockedMinutes} minuto${lockedMinutes > 1 ? 's' : ''}.`);
-      } else if (error.response?.data?.detail) {
-        // Mostrar detalle genérico si existe
-        toast.error(error.response.data.detail);
       } else {
-        toast.error('Error al iniciar sesión.');
+        // Usar handleApiError para mostrar un único mensaje claro
+        handleApiError(error);
       }
     } finally {
       setLoading(false);
@@ -73,7 +70,6 @@ function Login() {
           <div className="form-group">
             <label className="form-label">Usuario</label>
             <div className="input-group">
-              <span className="input-icon">👤</span>
               <input
                 type="text"
                 className="form-input"
@@ -91,7 +87,6 @@ function Login() {
           <div className="form-group">
             <label className="form-label">Contraseña</label>
             <div className="input-group">
-              <span className="input-icon">🔒</span>
               <input
                 type="password"
                 className="form-input"

@@ -1,0 +1,18 @@
+Jefe de departamento
+- antonio 
+pwd: Antonio1234
+
+Tutor
+- sotolongo
+pwd: sotolongo1234
+
+Estudiante
+
+maikelis
+pwd: malkova12345
+
+- danielis
+pwd: Dani12345
+
+randy
+pwd: randy1234

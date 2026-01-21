@@ -441,8 +441,109 @@
   line-height: 1.4;
 }
 
-.titulito{
+.titulito {
   text-align: center;
+}
+
+/* Estilos Premium para Publicaciones por Nivel */
+.metrica-card-premium {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  grid-column: 1 / -1;
+}
+
+.metrica-card-premium h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.publicaciones-por-nivel-optimizado {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.nivel-item-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.nivel-item-premium:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.nivel-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nivel-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nivel-nombre {
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  font-size: 0.95rem;
+}
+
+.nivel-cantidad {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+
+.nivel-barra-wrapper {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.nivel-barra {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.nivel-porcentaje {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.nivel-total {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(55, 48, 163, 0.05) 100%);
+  border-radius: 8px;
+  border: 1px dashed rgba(30, 64, 175, 0.2);
+  color: #1e40af;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
 }
 
 /* Responsive */

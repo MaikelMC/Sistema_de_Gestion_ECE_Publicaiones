@@ -56,6 +56,59 @@ export const tutorService = {
     const url = params ? `${base}?${params}` : base;
     const response = await api.get(url);
     return response.data;
+  },
+
+  /**
+   * Obtener estudiantes pendientes de opinión
+   */
+  getPendingStudentsForOpinion: async () => {
+    try {
+      const url = buildPublicationsUrl('student-opinions/pending_students/');
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error al obtener estudiantes pendientes:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Obtener opiniones sobre estudiantes emitidas por el tutor
+   */
+  getStudentOpinions: async () => {
+    try {
+      const url = buildPublicationsUrl('student-opinions/my_opinions/');
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener opiniones de estudiantes:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Subir opinión de estudiante con archivo
+   */
+  uploadStudentOpinion: async (formData) => {
+    try {
+      const url = buildPublicationsUrl('student-opinions/create_opinion/');
+      console.log('📤 Subiendo opinión a:', url);
+      console.log('📦 FormData contenido:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+      const response = await api.post(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      console.log('✅ Respuesta del servidor:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error al subir opinión:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
   }
 };
 

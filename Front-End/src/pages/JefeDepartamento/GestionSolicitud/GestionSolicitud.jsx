@@ -212,7 +212,16 @@ function GestionSolicitud() {
         </div>
       )}
 
-      {/* Estadísticas removidas: se muestra solo la lista de solicitudes */}
+      {/* Estadísticas */}
+      <section className="stats-cards">
+        <div className="stat-card">
+          <div className="stat-icon">📝</div>
+          <div className="stat-info">
+            <div className="stat-number">{filtrarSolicitudes().length}</div>
+            <div className="stat-label">Total de Solicitudes</div>
+          </div>
+        </div>
+      </section>
 
       {/* Filtros y Búsqueda */}
       <div className="filtros-section">
@@ -224,7 +233,6 @@ function GestionSolicitud() {
           >
             <option value="todas">Todas las solicitudes</option>
             <option value="en_proceso">En proceso</option>
-            <option value="pendiente">Pendientes</option>
             <option value="aprobada">Aprobadas</option>
             <option value="rechazada">Rechazadas</option>
           </select>

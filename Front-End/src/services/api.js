@@ -35,13 +35,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
-    const data = error.response?.data;
 
     // Manejo centralizado de errores comunes
     if (status === 400) {
-      // Mostrar detalles de validación si están disponibles
-      const message = data?.detail || JSON.stringify(data) || 'Bad Request';
-      toast.error(message, { autoClose: 4000 });
+      // NO mostrar aquí, dejar que handleApiError lo maneje
       return Promise.reject(error);
     }
 
@@ -57,7 +54,7 @@ api.interceptors.response.use(
         window.location.href = '/not-found';
         return Promise.reject(error);
       }
-      toast.info('Recurso no encontrado (404)', { autoClose: 3000 });
+      // NO mostrar toast, dejar que handleApiError lo maneje
       return Promise.reject(error);
     }
 
@@ -96,9 +93,8 @@ api.interceptors.response.use(
       }
     }
 
-    // Si no se manejó arriba, mostrar mensaje genérico para el usuario
-    const fallback = data?.detail || error.message || 'Error en la petición';
-    toast.error(fallback, { autoClose: 4000 });
+    // Para otros errores, solo rechazar sin mostrar toast
+    // handleApiError en los componentes se encargará de mostrar el mensaje
     return Promise.reject(error);
   }
 );

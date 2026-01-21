@@ -80,10 +80,15 @@ function Publicaciones() {
   const cargarTutores = async () => {
     try {
       const response = await authService.getTutores();
-      setTutores(response || []);
+      const tutoresData = response || [];
+      console.log('✅ Tutores cargados:', tutoresData);
+      tutoresData.forEach(t => {
+        console.log(`  ID: ${t.id}, Nombre: ${t.get_full_name || t.full_name || t.username}`);
+      });
+      setTutores(tutoresData);
     } catch (error) {
-      console.error('Error al cargar tutores:', error);
-      // No mostrar error al usuario, solo log
+      console.error('❌ Error al cargar tutores:', error);
+      toast.warning('No se pudo cargar la lista de tutores. Puedes continuar sin seleccionar uno.');
     }
   };
 
@@ -201,7 +206,13 @@ function Publicaciones() {
         if (publicacionData.doi) formData.append('doi', publicacionData.doi);
         if (publicacionData.resumen) formData.append('abstract', publicacionData.resumen);
         if (publicacionData.nivel) formData.append('nivel', publicacionData.nivel);
-        if (publicacionData.tutor) formData.append('tutor', publicacionData.tutor);
+        // Solo enviar tutor si es un ID válido que existe en la lista
+        if (publicacionData.tutor && Number.isInteger(parseInt(publicacionData.tutor))) {
+          const tutorExiste = tutores.some(t => t.id === parseInt(publicacionData.tutor));
+          if (tutorExiste) {
+            formData.append('tutor', publicacionData.tutor);
+          }
+        }
         // Solo agregar archivo si es un archivo nuevo (File), no una URL string
         if (publicacionData.archivo && typeof publicacionData.archivo !== 'string') {
           formData.append('file', publicacionData.archivo);
@@ -217,7 +228,26 @@ function Publicaciones() {
         if (publicacionData.paginas) formData.append('paginas', publicacionData.paginas);
         if (publicacionData.doi) formData.append('doi', publicacionData.doi);
         if (publicacionData.resumen) formData.append('resumen', publicacionData.resumen);
-        if (publicacionData.tutor) formData.append('tutor', publicacionData.tutor);
+        
+        // Solo enviar tutor si es un ID válido que existe en la lista
+        if (publicacionData.tutor) {
+          const tutorId = parseInt(publicacionData.tutor);
+          console.log('🔍 Verificando tutor:', { tutorId, tutor_text: publicacionData.tutor_text });
+          console.log('   Tutores disponibles:', tutores.map(t => ({ id: t.id, nombre: t.get_full_name || t.full_name || t.username })));
+          
+          if (!Number.isInteger(tutorId)) {
+            console.warn('⚠️ Tutor inválido (no es número):', publicacionData.tutor);
+          } else {
+            const tutorExiste = tutores.some(t => t.id === tutorId);
+            if (tutorExiste) {
+              console.log('✅ Tutor válido encontrado, agregando al formulario');
+              formData.append('tutor', tutorId);
+            } else {
+              console.warn('⚠️ Tutor no existe en la lista:', tutorId);
+            }
+          }
+        }
+        
         if (publicacionData.archivo && typeof publicacionData.archivo !== 'string') {
           formData.append('archivo', publicacionData.archivo);
         }
@@ -444,6 +474,10 @@ function Publicaciones() {
                   name="fechaPublicacion"
                   value={publicacionData.fechaPublicacion}
                   onChange={handleInputChange}
+                  max={(() => {
+                    const today = new Date();
+                    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                  })()}
                   className="inputr"
                 />
               </div>

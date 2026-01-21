@@ -34,18 +34,8 @@ function ChangePasswordModal({ isOpen, onClose }) {
       onClose();
     } catch (error) {
       console.error('Error al cambiar contraseña:', error);
+      // Usar handleApiError para mostrar un único mensaje claro
       handleApiError(error);
-      
-      if (error.response?.data?.old_password) {
-        toast.error(error.response.data.old_password[0]);
-      } else if (error.response?.data?.new_password) {
-        const msg = Array.isArray(error.response.data.new_password) 
-          ? error.response.data.new_password.join(' ') 
-          : error.response.data.new_password;
-        toast.error(msg);
-      } else {
-        toast.error('Error al cambiar la contraseña');
-      }
     } finally {
       setLoading(false);
     }

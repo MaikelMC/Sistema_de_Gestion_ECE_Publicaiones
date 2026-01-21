@@ -5,11 +5,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Publication, TutorOpinion, TutorStudent
+from .models import Publication, TutorOpinion, TutorStudent, StudentOpinion
 from .serializers import (
     PublicationSerializer, PublicationCreateSerializer, PublicationUpdateSerializer,
     PublicationReviewSerializer, PublicationDetailSerializer,
-    TutorOpinionSerializer, TutorStudentSerializer
+    TutorOpinionSerializer, TutorStudentSerializer, StudentOpinionSerializer
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -495,4 +495,168 @@ class TutorStudentViewSet(viewsets.ModelViewSet):
         
         relations = self.get_queryset().filter(student=request.user, is_active=True)
         serializer = TutorStudentSerializer(relations, many=True)
+        return Response(serializer.data)
+
+
+class StudentOpinionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para opiniones sobre estudiantes
+    """
+    queryset = StudentOpinion.objects.all()
+    serializer_class = StudentOpinionSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = StudentOpinion.objects.select_related('tutor', 'student')
+        
+        if user.role == 'tutor':
+            queryset = queryset.filter(tutor=user)
+        elif user.role == 'jefe':
+            # Jefe puede ver todas las opiniones
+            queryset = queryset.all()
+        elif user.role == 'estudiante':
+            queryset = queryset.filter(student=user)
+        
+        return queryset.order_by('-created_at')
+    
+    @swagger_auto_schema(
+        operation_description="Obtener estudiantes pendientes de opinión del tutor",
+        responses={200: TutorStudentSerializer(many=True)},
+        tags=['Opiniones - Estudiantes']
+    )
+    @action(detail=False, methods=['get'])
+    def pending_students(self, request):
+        """Obtener estudiantes sin opinión del tutor"""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        if request.user.role != 'tutor':
+            return Response({'error': 'Solo tutores pueden acceder'}, status=status.HTTP_403_FORBIDDEN)
+        
+        print(f"\n=== DEBUG pending_students ===")
+        print(f"Usuario actual: {request.user.id} - {request.user.get_full_name()} (rol: {request.user.role})")
+        
+        # Todos los estudiantes del tutor
+        all_tutored = TutorStudent.objects.filter(
+            tutor=request.user,
+            is_active=True
+        )
+        print(f"TutorStudent registros para este tutor: {all_tutored.count()}")
+        for ts in all_tutored:
+            print(f"  → {ts.student.get_full_name()} (ID: {ts.student.id})")
+        
+        # Estudiantes que ya tienen opinión
+        with_opinion = StudentOpinion.objects.filter(
+            tutor=request.user
+        ).values_list('student_id', flat=True)
+        print(f"Estudiantes con opinión ya emitida: {list(with_opinion)}")
+        
+        # Estudiantes pendientes
+        pending = TutorStudent.objects.filter(
+            tutor=request.user,
+            is_active=True
+        ).exclude(
+            student_id__in=with_opinion
+        ).select_related('student')
+        
+        print(f"Estudiantes PENDIENTES (sin opinión): {pending.count()}")
+        for ts in pending:
+            print(f"  → {ts.student.get_full_name()}")
+        print(f"=== FIN DEBUG ===\n")
+        
+        serializer = TutorStudentSerializer(pending, many=True)
+        return Response(serializer.data)
+    
+    @swagger_auto_schema(
+        operation_description="Subir opinión de estudiante con archivo",
+        request_body=StudentOpinionSerializer,
+        responses={201: StudentOpinionSerializer},
+        tags=['Opiniones - Estudiantes'],
+        methods=['post']
+    )
+    @action(detail=False, methods=['post'])
+    def create_opinion(self, request, *args, **kwargs):
+        """Crear una nueva opinión sobre estudiante - POST /student-opinions/create_opinion/"""
+        if request.user.role != 'tutor':
+            return Response({'error': 'Solo tutores pueden emitir opiniones'}, status=status.HTTP_403_FORBIDDEN)
+        
+        student_id = request.data.get('student')
+        file = request.FILES.get('file')
+        
+        print(f"\n=== DEBUG create_opinion (POST) ===")
+        print(f"Usuario: {request.user.get_full_name()}")
+        print(f"Student ID: {student_id}")
+        print(f"Archivo: {file}")
+        
+        if not student_id or not file:
+            print(f"❌ Faltan datos: student_id={student_id}, file={file}")
+            return Response(
+                {'error': 'Se requieren student_id y archivo'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validar que el tutor esté asignado al estudiante
+        try:
+            tutor_student = TutorStudent.objects.get(
+                tutor=request.user,
+                student_id=student_id,
+                is_active=True
+            )
+            print(f"✅ Relación tutor-estudiante encontrada: {tutor_student}")
+        except TutorStudent.DoesNotExist:
+            print(f"❌ No hay relación tutor-estudiante")
+            return Response(
+                {'error': 'No tienes permiso para emitir opinión sobre este estudiante'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Validar extensión de archivo
+        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx']
+        file_name = file.name.lower()
+        if not any(file_name.endswith(ext) for ext in allowed_extensions):
+            print(f"❌ Extensión no permitida: {file_name}")
+            return Response(
+                {'error': f'Formato no permitido. Formatos válidos: {", ".join(allowed_extensions)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            opinion = StudentOpinion.objects.update_or_create(
+                tutor=request.user,
+                student_id=student_id,
+                defaults={'file': file}
+            )[0]
+            
+            print(f"✅ Opinión creada/actualizada: {opinion.id}")
+            print(f"=== FIN DEBUG create_opinion ===\n")
+            
+            serializer = self.get_serializer(opinion)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(f"❌ Error al guardar: {str(e)}")
+            print(f"=== FIN DEBUG create_opinion ===\n")
+            return Response(
+                {'error': f'Error al guardar opinión: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def create(self, request, *args, **kwargs):
+        """Wrapper para redireccionar POST / a create_opinion"""
+        return self.create_opinion(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_description="Obtener opiniones emitidas por tutor",
+        responses={200: StudentOpinionSerializer(many=True)},
+        tags=['Opiniones - Estudiantes']
+    )
+    @action(detail=False, methods=['get'])
+    def my_opinions(self, request):
+        """Obtener opiniones emitidas por el tutor"""
+        if request.user.role != 'tutor':
+            return Response({'error': 'Solo tutores pueden acceder'}, status=status.HTTP_403_FORBIDDEN)
+        
+        opinions = self.get_queryset()
+        serializer = self.get_serializer(opinions, many=True)
         return Response(serializer.data)

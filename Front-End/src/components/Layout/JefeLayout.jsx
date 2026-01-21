@@ -19,9 +19,9 @@ function JefeLayout() {
 
   const menuItems = [
     { path: '/jefe/inicio', label: 'Inicio', icon: '🏠' },
-    { path: '/jefe/gestion-solicitudes', label: 'Gestión Solicitudes', icon: '📝' },
-    { path: '/jefe/gestion-publicaciones', label: 'Gestión Publicaciones', icon: '📄' },
-    { path: '/jefe/reportes', label: 'Reportes', icon: '📊' },
+    { path: '/jefe/gestion-solicitudes', label: 'Solicitudes', icon: '📝' },
+    { path: '/jefe/gestion-publicaciones', label: 'Publicaciones', icon: '📄' },
+    { path: '/jefe/opiniones', label: 'Opiniones', icon: '💬' },
     { path: '/jefe/perfil', label: 'Perfil', icon: '👤' },
   ];
 

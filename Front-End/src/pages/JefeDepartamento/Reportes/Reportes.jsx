@@ -2,7 +2,6 @@
 import './Reportes.css';
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { toast } from 'react-toastify';
 
 function Reportes() {
   const [datosReporte, setDatosReporte] = useState({});
@@ -50,14 +49,30 @@ function Reportes() {
       const totalGlobal = aprobadasGlobal + rechazadasGlobal;
       const tasaAprobacionGlobal = totalGlobal > 0 ? Math.round((aprobadasGlobal / totalGlobal) * 100) : 0;
       
+      // Calcular total de publicaciones
+      const totalPublicacionesCalculado = Array.isArray(publicacionesNivel) 
+        ? publicacionesNivel.reduce((sum, p) => sum + (p.cantidad || 0), 0) 
+        : 0;
+      
+      // VERIFICACIÓN Y LOGGING DE DATOS ACTUALES
+      console.log('📊 === VERIFICACIÓN DE DATOS EN REPORTES ===');
+      console.log('✅ Total de Solicitudes (Global):', todasSolicitudes.length);
+      console.log('   - Detalle:', {
+        aprobadas: aprobadasGlobal,
+        rechazadas: rechazadasGlobal,
+        en_proceso: todasSolicitudes.filter(s => s.status === 'en_proceso').length
+      });
+      console.log('✅ Total de Publicaciones:', totalPublicacionesCalculado);
+      console.log('   - Desglose por nivel:', publicacionesNivel);
+      console.log('📋 Timestamp de carga:', new Date().toLocaleString('es-ES'));
+      console.log('🔄 Periodo: Mensual | Año:', anio);
+      
       // Construir objeto de datos
       setDatosReporte({
         resumen: {
           totalEstudiantes: statsData.por_rol?.estudiante || 0,
-          totalSolicitudes: todasSolicitudes.length, // Total GLOBAL de solicitudes
-          totalPublicaciones: Array.isArray(publicacionesNivel) 
-            ? publicacionesNivel.reduce((sum, p) => sum + (p.cantidad || 0), 0) 
-            : 0,
+          totalSolicitudes: todasSolicitudes.length, // Total GLOBAL de solicitudes VERIFICADO
+          totalPublicaciones: totalPublicacionesCalculado, // VERIFICADO
           tasaAprobacion: tasaAprobacionGlobal // Tasa GLOBAL calculada
         },
         solicitudesPorMes: Array.isArray(solicitudesMensuales) ? solicitudesMensuales : [],
@@ -101,14 +116,6 @@ function Reportes() {
       case 'publicacion': return '📄';
       default: return '📌';
     }
-  };
-
-  const exportarPDF = () => {
-    toast.info(`📊 Generando reporte ${periodo} en PDF...`);
-  };
-
-  const exportarExcel = () => {
-    toast.info(`📈 Exportando datos ${periodo} a Excel...`);
   };
 
   const { 
@@ -181,183 +188,59 @@ function Reportes() {
           <h1>Reportes y Estadísticas</h1>
           <p>Métricas y análisis</p>
         </div>
-        <div className="header-actions">
-          <button className="btn-exportar" onClick={exportarPDF}>
-            📊 PDF
-          </button>
-          <button className="btn-exportar" onClick={exportarExcel}>
-            📈 Excel
-          </button>
-        </div>
       </header>
-
-      {/* Filtros */}
-      <div className="filtros-section">
-        <h2 className='titulito'>Busca por Periodo y Año</h2>
-        <div className="filtros-group">
-          <div className="filtro-group">
-            <label>Período:</label>
-            <select 
-              value={periodo} 
-              onChange={(e) => setPeriodo(e.target.value)}
-              className="filtro-select"
-            >
-              <option value="mensual">Mensual</option>
-              <option value="trimestral">Trimestral</option>
-              <option value="anual">Anual</option>
-            </select>
-          </div>
-          <div className="filtro-group">
-            <label>Año:</label>
-            <select 
-              value={anio} 
-              onChange={(e) => setAnio(e.target.value)}
-              className="filtro-select"
-            >
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-              <option value="2022">2022</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
       {/* Resumen General */}
       <div className="resumen-cards">
         <div className="resumen-card">
-          <div className="resumen-icon">🎓</div>
+          <div className="resumen-icon">📄</div>
           <div className="resumen-info">
-            <span className="resumen-number">{resumen.totalEstudiantes}</span>
-            <span className="resumen-label">Estudiantes Activos</span>
+            <span className="resumen-number">{resumen.totalPublicaciones}</span>
+            <span className="resumen-label">Total de Publicaciones</span>
           </div>
         </div>
         <div className="resumen-card">
           <div className="resumen-icon">📝</div>
           <div className="resumen-info">
             <span className="resumen-number">{resumen.totalSolicitudes}</span>
-            <span className="resumen-label">Solicitudes ECE</span>
-          </div>
-        </div>
-        <div className="resumen-card">
-          <div className="resumen-icon">📄</div>
-          <div className="resumen-info">
-            <span className="resumen-number">{resumen.totalPublicaciones}</span>
-            <span className="resumen-label">Publicaciones</span>
-          </div>
-        </div>
-        <div className="resumen-card">
-          <div className="resumen-icon">✅</div>
-          <div className="resumen-info">
-            <span className="resumen-number">{resumen.tasaAprobacion}%</span>
-            <span className="resumen-label">Tasa de Aprobación</span>
+            <span className="resumen-label">Total de Solicitudes</span>
           </div>
         </div>
       </div>
 
       {/* Gráficos y Métricas */}
       <div className="metricas-grid">
-        {/* Gráfico de Solicitudes por Mes */}
-        <div className="metrica-card">
-          <h3>📅 Solicitudes por {periodo === 'anual' ? 'Año' : periodo === 'trimestral' ? 'Trimestre' : 'Mes'}</h3>
-          <div className="grafico-barras">
-            {solicitudesPorMes.map((item, index) => (
-              <div key={index} className="barra-container">
-                <div className="barra-info">
-                  <span className="barra-mes">{item.mes}</span>
-                  <span className="barra-total">{item.solicitudes} total</span>
-                </div>
-                <div className="barra-wrapper">
-                  <div 
-                    className="barra aprobadas"
-                    style={{ width: `${(item.aprobadas / item.solicitudes) * 100}%` }}
-                    title={`Aprobadas: ${item.aprobadas}`}
-                  ></div>
-                  <div 
-                    className="barra rechazadas"
-                    style={{ width: `${(item.rechazadas / item.solicitudes) * 100}%` }}
-                    title={`Rechazadas: ${item.rechazadas}`}
-                  ></div>
-                </div>
-                <div className="barra-leyenda">
-                  <span>✅ {item.aprobadas}</span>
-                  <span>❌ {item.rechazadas}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Gráfico de Publicaciones por Nivel - CORREGIDO */}
-        <div className="metrica-card">
+        {/* Publicaciones por Nivel - DISEÑO PREMIUM - */}
+        <div className="metrica-card-premium">
           <h3>🎯 Publicaciones por Nivel</h3>
-          <div className="grafico-pastel">
-            <div className="pastel-container">
-              <div className="pastel-leyenda">
-                {publicacionesPorNivel.map((item, index) => (
-                  <div key={index} className="leyenda-item">
-                    <div 
-                      className="leyenda-color"
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <span className="leyenda-text">
-                      {item.nivel}: {item.cantidad} ({((item.cantidad / totalPublicaciones) * 100).toFixed(1)}%)
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="pastel-grafico">
-                {segmentos.map((segmento, index) => (
-                  <div
-                    key={index}
-                    className="pastel-segmento"
-                    style={{
-                      backgroundColor: segmento.color,
-                      transform: `rotate(${segmento.startAngle}deg)`,
-                      clipPath: `conic-gradient(from 0deg at 50% 50%, ${segmento.color} 0deg ${segmento.endAngle - segmento.startAngle}deg, transparent ${segmento.endAngle - segmento.startAngle}deg)`
+          <div className="publicaciones-por-nivel-optimizado">
+            {publicacionesPorNivel.map((item, index) => (
+              <div key={index} className="nivel-item-premium">
+                <div className="nivel-header">
+                  <div className="nivel-color" style={{ backgroundColor: item.color }}></div>
+                  <span className="nivel-nombre">{item.nivel}</span>
+                  <span className="nivel-cantidad">{item.cantidad}</span>
+                </div>
+                <div className="nivel-barra-wrapper">
+                  <div 
+                    className="nivel-barra"
+                    style={{ 
+                      backgroundColor: item.color,
+                      width: `${totalPublicaciones > 0 ? (item.cantidad / totalPublicaciones) * 100 : 0}%`
                     }}
                   ></div>
-                ))}
-                <div className="pastel-centro">
-                  <span className="pastel-total">{totalPublicaciones}</span>
-                  <span>Total</span>
                 </div>
+                <div className="nivel-porcentaje">{totalPublicaciones > 0 ? ((item.cantidad / totalPublicaciones) * 100).toFixed(1) : 0}%</div>
               </div>
+            ))}
+            <div className="nivel-total">
+              <strong>Total: {totalPublicaciones} publicaciones</strong>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Resumen de Métricas Avanzadas */}
-      <div className="metricas-avanzadas">
-        <h3>📊 Métricas Avanzadas - {periodo.charAt(0).toUpperCase() + periodo.slice(1)} {anio}</h3>
-        <div className="avanzadas-grid">
-          <div className="avanzada-card">
-            <h4>📈 Resumen del Período</h4>
-            <ul>
-              <li>📊 Total de solicitudes procesadas: {resumen?.totalSolicitudes || 0}</li>
-              <li>🎯 Publicaciones clasificadas: {resumen?.totalPublicaciones || 0}</li>
-              <li>🎓 Estudiantes activos: {resumen?.totalEstudiantes || 0}</li>
-            </ul>
-          </div>
-          <div className="avanzada-card">
-            <h4>🎯 Indicadores de Calidad</h4>
-            <ul>
-              <li>✅ Tasa de aprobación: {resumen?.tasaAprobacion || 0}%</li>
-              <li>📚 Publicaciones aprobadas por nivel disponibles</li>
-              <li>📊 Datos del año {anio}</li>
-            </ul>
-          </div>
-          <div className="avanzada-card">
-            <h4>🔍 Sistema de Gestión</h4>
-            <ul>
-              <li>🎓 Sistema integrado con base de datos real</li>
-              <li>📝 Reportes dinámicos por período</li>
-              <li>📚 Clasificación automática por nivel</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }

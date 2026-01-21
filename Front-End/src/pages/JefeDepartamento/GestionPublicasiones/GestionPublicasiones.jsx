@@ -16,6 +16,9 @@ function GestionPublicasiones() {
   const [error, setError] = useState(null);
   const [filtroNivel, setFiltroNivel] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroEstudiante, setFiltroEstudiante] = useState('');
+  const [sugerenciasEstudiantes, setSugerenciasEstudiantes] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [publicacionSeleccionada, setPublicacionSeleccionada] = useState(null);
   const [comentario, setComentario] = useState('');
@@ -57,6 +60,40 @@ function GestionPublicasiones() {
     }
   };
 
+  const obtenerEstudiantesUnicos = () => {
+    const estudiantes = new Set();
+    publicaciones.forEach(pub => {
+      if (pub.student_name) {
+        // Extraer solo nombre y apellido (sin usuario si está entre paréntesis)
+        const nombreLimpio = pub.student_name.includes('(') 
+          ? pub.student_name.substring(0, pub.student_name.indexOf('(')).trim()
+          : pub.student_name;
+        estudiantes.add(nombreLimpio);
+      }
+    });
+    return Array.from(estudiantes).sort();
+  };
+
+  const manejarCambioEstudiante = (valor) => {
+    setFiltroEstudiante(valor);
+    if (valor.trim()) {
+      const todos = obtenerEstudiantesUnicos();
+      const sugerencias = todos.filter(est => 
+        est.toLowerCase().includes(valor.toLowerCase())
+      );
+      setSugerenciasEstudiantes(sugerencias);
+      setMostrarSugerencias(true);
+    } else {
+      setSugerenciasEstudiantes([]);
+      setMostrarSugerencias(false);
+    }
+  };
+
+  const seleccionarEstudiante = (estudiante) => {
+    setFiltroEstudiante(estudiante);
+    setMostrarSugerencias(false);
+  };
+
   const filtrarPublicaciones = () => {
     let filtered = publicaciones;
 
@@ -65,9 +102,11 @@ function GestionPublicasiones() {
       filtered = filtered.filter(pub => pub.nivel === filtroNivel);
     }
 
-    // Filtro por estado
-    if (filtroEstado !== 'todos') {
-      filtered = filtered.filter(pub => pub.status === filtroEstado);
+    // Filtro por estudiante
+    if (filtroEstudiante.trim()) {
+      filtered = filtered.filter(pub => 
+        pub.student_name && pub.student_name.toLowerCase().includes(filtroEstudiante.toLowerCase())
+      );
     }
 
     // Búsqueda por título, autor o estudiante
@@ -208,74 +247,87 @@ function GestionPublicasiones() {
         </div>
       )}
 
+      {/* Estadísticas */}
+      {!loading && (
+        <section className="stats-cards">
+          <div className="stat-card">
+            <div className="stat-icon">📄</div>
+            <div className="stat-info">
+              <div className="stat-number">{stats.total}</div>
+              <div className="stat-label">Total de Publicaciones</div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Contenido */}
       {!loading && !error && (
         <>
-          {/* Estadísticas Rápidas */}
-          <div className="stats-cards">
-            <div className="stat-card">
-              <div className="stat-icon">📚</div>
-              <div className="stat-info">
-                <span className="stat-number">{stats.total}</span>
-                <span className="stat-label">Total Publicaciones</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">✅</div>
-              <div className="stat-info">
-                <span className="stat-number">{stats.aprobadas}</span>
-                <span className="stat-label">Aprobadas</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">❌</div>
-              <div className="stat-info">
-                <span className="stat-number">{stats.rechazadas}</span>
-                <span className="stat-label">Rechazadas</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">⏳</div>
-              <div className="stat-info">
-                <span className="stat-number">{stats.pendientes}</span>
-                <span className="stat-label">Pendientes</span>
+          {/* Filtros y Búsqueda */}
+          <div className="filtros-section">
+            <h2 className="letrero">Busca por niveles o por estudiante</h2>
+            <div className="filtros-left">
+              <select 
+                value={filtroNivel} 
+                onChange={(e) => setFiltroNivel(e.target.value)}
+                className="filtro-select"
+              >
+                <option value="todos">Todos los niveles</option>
+                <option value="1">Nivel 1</option>
+                <option value="2">Nivel 2</option>
+                <option value="3">Nivel 3</option>
+              </select>
+
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input 
+                  type="text"
+                  placeholder="Buscar por nombre de estudiante..."
+                  value={filtroEstudiante}
+                  onChange={(e) => manejarCambioEstudiante(e.target.value)}
+                  onFocus={() => filtroEstudiante.trim() && setMostrarSugerencias(true)}
+                  className="filtro-select"
+                  style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box' }}
+                />
+                {mostrarSugerencias && sugerenciasEstudiantes.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    minWidth: '200px'
+                  }}>
+                    {sugerenciasEstudiantes.map((estudiante, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => seleccionarEstudiante(estudiante)}
+                        style={{
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f0f0f0',
+                          backgroundColor: '#fafafa',
+                          whiteSpace: 'nowrap',
+                          overflow: 'visible',
+                          fontSize: '14px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#efefef'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
+                        title={estudiante}
+                      >
+                        👤 {estudiante}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-      {/* Filtros y Búsqueda */}
-      <div className="filtros-section">
-        <h2 className="letrero" >Busca por niveles o por estado</h2>
-        <div className="filtros-left">
-          <select 
-            value={filtroNivel} 
-            onChange={(e) => setFiltroNivel(e.target.value)}
-            className="filtro-select"
-          >
-            <option value="todos">Todos los niveles</option>
-            <option value="1">Nivel 1</option>
-            <option value="2">Nivel 2</option>
-            <option value="3">Nivel 3</option>
-          </select>
-
-          <select 
-            value={filtroEstado} 
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="filtro-select"
-            disabled={loading}
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="pending">Pendientes</option>
-            <option value="aprobada">Aprobadas</option>
-            <option value="rechazada">Rechazadas</option>
-            <option value="en_proceso">En Proceso</option>
-          </select>
-          <button onClick={cargarPublicaciones} className="btn-refresh" disabled={loading}>
-            🔄 Recargar
-          </button>
-        </div>
-  
-      </div>
 
       {/* Lista de Publicaciones */}
       <div className="publicaciones-list">
@@ -312,26 +364,6 @@ function GestionPublicasiones() {
                     Publicado
                   </div>
                 </div>
-              </div>
-
-              <div className="publicacion-details">
-                <p className="resumen">{publicacion.summary}</p>
-                {publicacion.doi ? (
-                  <div className="detail-item">
-                    <strong>DOI:</strong>{' '}
-                    <a href={`https://doi.org/${publicacion.doi}`} target="_blank" rel="noopener noreferrer">{publicacion.doi}</a>
-                  </div>
-                ) : null}
-                {publicacion.reviewed_at && (
-                  <div className="detail-item">
-                    <strong>Revisado:</strong> {new Date(publicacion.reviewed_at).toLocaleDateString('es-ES')} por {publicacion.reviewed_by_name || 'N/A'}
-                  </div>
-                )}
-                {publicacion.comments && (
-                  <div className="detail-item comentario">
-                    <strong>Comentario:</strong> {publicacion.comments}
-                  </div>
-                )}
               </div>
 
               <div className="publicacion-actions">

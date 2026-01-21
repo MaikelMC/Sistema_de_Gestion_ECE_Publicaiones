@@ -10,9 +10,48 @@ export const handleApiError = (error) => {
     // Error de respuesta del servidor
     const { status, data } = error.response;
 
+    // Función para convertir errores técnicos en mensajes claros
+    const getMensajeClaro = (errorData) => {
+      // Si es un objeto con campos de formulario (errores de validación)
+      if (typeof errorData === 'object' && !Array.isArray(errorData)) {
+        const campos = Object.entries(errorData);
+        const mensajes = campos.map(([campo, errores]) => {
+          const arrErrors = Array.isArray(errores) ? errores : [errores];
+          let mensajesCampo = arrErrors
+            .map(err => {
+              // Convertir errores técnicos a mensajes legibles
+              if (typeof err !== 'string') {
+                return 'Error al procesar la solicitud.';
+              }
+              
+              if (err.includes('Invalid pk')) {
+                return `El tutor seleccionado no existe. Por favor, selecciona un tutor válido o deja el campo en blanco.`;
+              } else if (err.includes('does not exist')) {
+                return `El registro seleccionado no existe en la base de datos.`;
+              } else if (err.includes('required')) {
+                return `El campo "${campo}" es requerido.`;
+              } else if (campo === 'old_password') {
+                return 'La contraseña actual es incorrecta.';
+              } else if (campo === 'new_password') {
+                return 'La nueva contraseña no cumple los requisitos. Debe tener al menos 8 caracteres.';
+              } else if (campo === 'username') {
+                return 'El nombre de usuario ya existe o es inválido.';
+              }
+              return err;
+            })
+            .join(' ');
+          return mensajesCampo;
+        });
+        return mensajes.join(' ');
+      }
+      return null;
+    };
+
+    const mensajeClaro = getMensajeClaro(data);
+
     switch (status) {
       case 400:
-        toast.error(data.message || 'Datos inválidos');
+        toast.error(mensajeClaro || data.message || data.detail || 'Datos inválidos');
         break;
       case 401:
         toast.error('No autorizado. Por favor inicia sesión nuevamente');
@@ -27,7 +66,7 @@ export const handleApiError = (error) => {
         toast.error('Error del servidor. Intenta más tarde');
         break;
       default:
-        toast.error(data.message || 'Error al procesar la solicitud');
+        toast.error(mensajeClaro || data.message || data.detail || 'Error al procesar la solicitud');
     }
 
     return data;
@@ -38,8 +77,6 @@ export const handleApiError = (error) => {
     // Otro tipo de error
     toast.error('Error inesperado: ' + error.message);
   }
-
-  return null;
 };
 
 /**

@@ -408,14 +408,6 @@ function PerfilJefe() {
                 </div>
 
                 <div className="stat-item">
-                  <div className="stat-icon">📄</div>
-                  <div className="stat-content">
-                    <span className="stat-number">0</span>
-                    <span className="stat-label">Publicaciones Clasificadas</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
                   <div className="stat-icon">🎓</div>
                   <div className="stat-content">
                     <span className="stat-number">{stats.estudiantes_activos || 0}</span>

@@ -36,19 +36,8 @@ function ForgotPassword() {
       }, 2000);
     } catch (error) {
       console.error('Error al resetear contraseña:', error);
+      // Usar handleApiError para mostrar un único mensaje claro
       handleApiError(error);
-      if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
-      } else if (error.response?.data?.username) {
-        toast.error(error.response.data.username[0]);
-      } else if (error.response?.data?.new_password) {
-        const msg = Array.isArray(error.response.data.new_password) 
-          ? error.response.data.new_password.join(' ') 
-          : error.response.data.new_password;
-        toast.error(msg);
-      } else {
-        toast.error('Error al restablecer la contraseña');
-      }
     } finally {
       setLoading(false);
     }

@@ -31,8 +31,7 @@ class Publication(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='publications_as_tutor',
-        limit_choices_to={'role': 'tutor'}
+        related_name='publications_as_tutor'
     )
     
     # Información de la publicación
@@ -159,3 +158,45 @@ class TutorStudent(models.Model):
     
     def __str__(self):
         return f"{self.tutor.get_full_name()} -> {self.student.get_full_name()}"
+
+
+class StudentOpinion(models.Model):
+    """
+    Modelo para opiniones de tutores sobre estudiantes
+    """
+    tutor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='student_opinions',
+        limit_choices_to={'role': 'tutor'}
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='opinions_received',
+        limit_choices_to={'role': 'estudiante'}
+    )
+    
+    file = models.FileField(
+        upload_to='opinions/%Y/%m/',
+        verbose_name='Archivo de Opinión'
+    )
+    file_url = models.URLField(
+        verbose_name='URL del Archivo',
+        blank=True,
+        null=True
+    )
+    
+    created_at = models.DateTimeField('Fecha de Opinión', auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'student_opinions'
+        verbose_name = 'Opinión sobre Estudiante'
+        verbose_name_plural = 'Opiniones sobre Estudiantes'
+        ordering = ['-created_at']
+        unique_together = ['tutor', 'student']
+    
+    def __str__(self):
+        return f"Opinión de {self.tutor.get_full_name()} sobre {self.student.get_full_name()}"
+

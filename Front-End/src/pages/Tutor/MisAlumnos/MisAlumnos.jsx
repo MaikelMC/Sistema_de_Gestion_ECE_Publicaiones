@@ -11,7 +11,9 @@ function MisAlumnos() {
   const [selectedPublication, setSelectedPublication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filtro, setFiltro] = useState('todos');
+  const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
+  const [sugerenciasEstudiantes, setSugerenciasEstudiantes] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
   // Derived helpers for publication preview
   const fileUrl = selectedPublication ? (selectedPublication.file_url || selectedPublication.archivo) : null;
@@ -95,8 +97,31 @@ function MisAlumnos() {
   };
 
   const filtrarAlumnos = () => {
-    if (filtro === 'todos') return alumnos;
-    return alumnos.filter(alumno => alumno.estado === filtro);
+    if (!busquedaEstudiante.trim()) return alumnos;
+    const searchLower = busquedaEstudiante.toLowerCase();
+    return alumnos.filter(alumno => 
+      alumno.nombre.toLowerCase().includes(searchLower) ||
+      alumno.email.toLowerCase().includes(searchLower)
+    );
+  };
+
+  const manejarCambioBusqueda = (valor) => {
+    setBusquedaEstudiante(valor);
+    if (valor.trim()) {
+      const sugerencias = alumnos.filter(alumno =>
+        alumno.nombre.toLowerCase().includes(valor.toLowerCase())
+      );
+      setSugerenciasEstudiantes(sugerencias);
+      setMostrarSugerencias(true);
+    } else {
+      setSugerenciasEstudiantes([]);
+      setMostrarSugerencias(false);
+    }
+  };
+
+  const seleccionarEstudiante = (alumno) => {
+    setBusquedaEstudiante(alumno.nombre);
+    setMostrarSugerencias(false);
   };
 
   const getEstadoColor = (estado) => {
@@ -151,20 +176,53 @@ function MisAlumnos() {
       {/* Contenido */}
       {!loading && !error && (
         <>
-          {/* Filtros */}
+          {/* Búsqueda de Estudiante */}
           <div className="filtros-section">
-            <select 
-              value={filtro} 
-              onChange={(e) => setFiltro(e.target.value)}
-              className="filtro-select"
-            >
-              <option value="todos">Todos los alumnos ({alumnos.length})</option>
-              <option value="Activo">Solo activos ({alumnos.filter(a => a.estado === 'Activo').length})</option>
-              <option value="Inactivo">Solo inactivos ({alumnos.filter(a => a.estado === 'Inactivo').length})</option>
-            </select>
-            <button onClick={cargarAlumnos} className="btn-refresh" title="Recargar">
-              🔄 Recargar
-            </button>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input 
+                type="text"
+                placeholder="🔍 Busca un estudiante..."
+                value={busquedaEstudiante}
+                onChange={(e) => manejarCambioBusqueda(e.target.value)}
+                onFocus={() => busquedaEstudiante && setMostrarSugerencias(true)}
+                className="filtro-select"
+                style={{ width: '100%' }}
+              />
+              {mostrarSugerencias && sugerenciasEstudiantes.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderTop: 'none',
+                  borderRadius: '0 0 6px 6px',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {sugerenciasEstudiantes.map(estudiante => (
+                    <div
+                      key={estudiante.id}
+                      onClick={() => seleccionarEstudiante(estudiante)}
+                      style={{
+                        padding: '10px 15px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f3f4f6',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                    >
+                      <div style={{ fontWeight: 500 }}>{estudiante.nombre}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{estudiante.email}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Lista de Alumnos */}

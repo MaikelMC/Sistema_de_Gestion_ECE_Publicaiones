@@ -11,7 +11,8 @@ import Perfil from "./pages/Estudiante/Perfil/Perfil";
 import InicioJefe from "./pages/JefeDepartamento/Inicio/Inicio"; 
 import GestionSolicitud from "./pages/JefeDepartamento/GestionSolicitud/GestionSolicitud"; 
 import GestionPublicasiones from "./pages/JefeDepartamento/GestionPublicasiones/GestionPublicasiones"; 
-import Reportes from "./pages/JefeDepartamento/Reportes/Reportes"; 
+import OpinionesJefe from "./pages/JefeDepartamento/OpinionesJefe/OpinionesJefe";
+// import Reportes from "./pages/JefeDepartamento/Reportes/Reportes"; // Reportes eliminado - stats en secciones individuales
 import PerfilJefe from "./pages/JefeDepartamento/PerfilJefe/PerfilJefe";
 import TutorLayout from "./components/Layout/TutorLayout"; 
 import InicioTutor from "./pages/Tutor/Inicio/Inicio";
@@ -135,7 +136,8 @@ function App() {
           <Route path="inicio" element={<InicioJefe />} />
           <Route path="gestion-solicitudes" element={<GestionSolicitud />} />
           <Route path="gestion-publicaciones" element={<GestionPublicasiones />} />
-          <Route path="reportes" element={<Reportes />} />
+          <Route path="opiniones" element={<OpinionesJefe />} />
+          {/* <Route path="reportes" element={<Reportes />} /> Reportes eliminado */}
           <Route path="perfil" element={<PerfilJefe />} />
         </Route>
 

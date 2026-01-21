@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Publication, TutorOpinion, TutorStudent
+from .models import Publication, TutorOpinion, TutorStudent, StudentOpinion
 
 
 @admin.register(Publication)
@@ -47,3 +47,12 @@ class TutorStudentAdmin(admin.ModelAdmin):
     search_fields = ('tutor__username', 'student__username')
     readonly_fields = ('assigned_date', 'created_at', 'updated_at')
     ordering = ('-assigned_date',)
+
+
+@admin.register(StudentOpinion)
+class StudentOpinionAdmin(admin.ModelAdmin):
+    list_display = ('tutor', 'student', 'created_at', 'file')
+    list_filter = ('created_at', 'tutor')
+    search_fields = ('tutor__username', 'student__username', 'student__email')
+    readonly_fields = ('created_at', 'updated_at')
+    ordering = ('-created_at',)
